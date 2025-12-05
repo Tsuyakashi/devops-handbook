@@ -9,6 +9,8 @@ INSTANCE_TYPE="t2.micro"
 KEY_PAIR_NAME="some-key-pair"
 SECURITY_GROUP_NAME="CLI-security-group"
 
+ROOT_PASSWORD="root123"
+
 function runInstance() {
     DEFAULT_VPC_ID=$(aws ec2 describe-vpcs \
         --filters Name=isDefault,Values=true \
@@ -61,7 +63,8 @@ function runInstance() {
             --output text > ./keys/$KEY_PAIR_NAME.pem
         chmod 600 ./keys/$KEY_PAIR_NAME.pem 
     fi
-   
+    
+    # Add multiply start with inbuild counter 
     INSTANCE_ID=$(aws ec2 run-instances \
         --image-id $AMI_ID \
         --count 1 \
@@ -83,11 +86,11 @@ function runInstance() {
 }
 
 function userConfigure() {
-! id user1 && sudo useradd -m -p $(openssl passwd -6 root123) user1
-! id user2 && sudo useradd -m -p $(openssl passwd -6 root123) user2
-! id user3 && sudo useradd -m -p $(openssl passwd -6 root123) user3
-! id user4 && sudo useradd -m -p $(openssl passwd -6 root123) user4
-! id user5 && sudo useradd -m -p $(openssl passwd -6 root123) user5
+! id user1 && sudo useradd -m -p $(openssl passwd -6 $ROOT_PASSWORD) user1
+! id user2 && sudo useradd -m -p $(openssl passwd -6 $ROOT_PASSWORD) user2
+! id user3 && sudo useradd -m -p $(openssl passwd -6 $ROOT_PASSWORD) user3
+! id user4 && sudo useradd -m -p $(openssl passwd -6 $ROOT_PASSWORD) user4
+! id user5 && sudo useradd -m -p $(openssl passwd -6 $ROOT_PASSWORD) user5
 
 sudo mkdir -p /home/user1/.ssh
 sudo cp /home/ubuntu/.ssh/authorized_keys /home/user1/.ssh/authorized_keys
