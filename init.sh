@@ -137,9 +137,33 @@ else
 fi
 }
 
-if [[ "$1" == "--aws" ]]; then
+AWS_FLAG=FALSE
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --count)
+            if [[ -z "$2" ]]; then
+                echo "Error: --cout requires num"
+                exit 1
+            fi
+            EC_COUNT=$2
+            shift 2
+            ;;
+        --aws)
+            AWS_FLAG=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+
+if [ AWS_FLAG == true ]; then
     ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
-    # Add configuration complete check
+    ! -f ~/.aws/config
 
     for ((i=1; i<=EC_COUNT; i++)) do
         echo "Starting instance #$i"
