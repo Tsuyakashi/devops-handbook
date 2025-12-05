@@ -75,42 +75,7 @@ function runInstance() {
     --output text)
 }
 
-if [[ "$1" == "--aws" ]]; then
-    AMI_ID="ami-004e960cde33f9146"
-    EC_COUNT=1 
-    INSTANCE_TYPE="t2.micro"
-    KEY_PAIR_NAME="some-key-pair"
-    SECURITY_GROUP_NAME="CLI-security-group"
-
-    ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
-    # Add configuration complete check
-
-    [ $EC_COUNT != 1 ] && echo "Not suppported"
-    
-    runInstance
-    echo $INSTANCE_IP
-
-    while ! nc -z $INSTANCE_IP 22; do
-            sleep 5
-            echo "Instance did not accesible yet"
-    done
-
-    scp -i ./keys/$KEY_PAIR_NAME.pem \
-        -o StrictHostKeyChecking=accept-new \
-        ./init.sh \
-        ubuntu@$INSTANCE_IP:~/
-
-    ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
-        -o StrictHostKeyChecking=accept-new \
-        ubuntu@$INSTANCE_IP \
-        "sudo ./init.sh" 
-
-    exit 0
-fi
-
-
-# sudo userdel -r testuser
-
+function userConfigure() {
 ! id user1 && sudo useradd -m -p $(openssl passwd -6 root123) user1
 ! id user2 && sudo useradd -m -p $(openssl passwd -6 root123) user2
 ! id user3 && sudo useradd -m -p $(openssl passwd -6 root123) user3
@@ -159,4 +124,38 @@ if [[ $(grep "^user3" /etc/passwd) == "user3:x:1003:1003::/home/user3:/bin/sh" ]
     sudo chsh -s /bin/bash user3
 else 
     sudo chsh -s /bin/sh user3
+fi
+}
+
+if [[ "$1" == "--aws" ]]; then
+    AMI_ID="ami-004e960cde33f9146"
+    EC_COUNT=1 
+    INSTANCE_TYPE="t2.micro"
+    KEY_PAIR_NAME="some-key-pair"
+    SECURITY_GROUP_NAME="CLI-security-group"
+
+    ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
+    # Add configuration complete check
+
+    [ $EC_COUNT != 1 ] && echo "Not suppported"
+    
+    runInstance
+    echo $INSTANCE_IP
+
+    while ! nc -z $INSTANCE_IP 22; do
+            sleep 5
+            echo "Instance did not accesible yet"
+    done
+
+    scp -i ./keys/$KEY_PAIR_NAME.pem \
+        -o StrictHostKeyChecking=accept-new \
+        ./init.sh \
+        ubuntu@$INSTANCE_IP:~/
+
+    ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
+        -o StrictHostKeyChecking=accept-new \
+        ubuntu@$INSTANCE_IP \
+        "sudo ./init.sh" 
+else 
+    userConfigure
 fi
