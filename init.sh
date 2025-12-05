@@ -137,25 +137,26 @@ if [[ "$1" == "--aws" ]]; then
     ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
     # Add configuration complete check
 
-    [ $EC_COUNT != 1 ] && echo "Not suppported"
-    
-    runInstance
-    echo $INSTANCE_IP
+    for ((i=1; i<=EC_COUNT; i++)) do
+        echo "Starting instance #$i"
+        runInstance
+        echo $INSTANCE_IP
 
-    while ! nc -z $INSTANCE_IP 22; do
-            sleep 5
-            echo "Instance did not accesible yet"
+        while ! nc -z $INSTANCE_IP 22; do
+                sleep 5
+                echo "Instance did not accesible yet"
+        done
+
+        scp -i ./keys/$KEY_PAIR_NAME.pem \
+            -o StrictHostKeyChecking=accept-new \
+            ./init.sh \
+            ubuntu@$INSTANCE_IP:~/
+
+        ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
+            -o StrictHostKeyChecking=accept-new \
+            ubuntu@$INSTANCE_IP \
+            "sudo ./init.sh" 
     done
-
-    scp -i ./keys/$KEY_PAIR_NAME.pem \
-        -o StrictHostKeyChecking=accept-new \
-        ./init.sh \
-        ubuntu@$INSTANCE_IP:~/
-
-    ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
-        -o StrictHostKeyChecking=accept-new \
-        ubuntu@$INSTANCE_IP \
-        "sudo ./init.sh" 
 else 
     userConfigure
 fi
