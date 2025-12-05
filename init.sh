@@ -163,7 +163,7 @@ done
 
 if [ AWS_FLAG == true ]; then
     ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
-    ! -f ~/.aws/config
+    ! -f ~/.aws/config && echo "AWS config do not exist" && exit 1
 
     for ((i=1; i<=EC_COUNT; i++)) do
         echo "Starting instance #$i"
