@@ -79,7 +79,7 @@ if [[ "$1" == "--aws" ]]; then
     AMI_ID="ami-004e960cde33f9146"
     EC_COUNT=1 
     INSTANCE_TYPE="t2.micro"
-    KEY_PAIR_NAME="amzn-key"
+    KEY_PAIR_NAME="some-key-pair"
     SECURITY_GROUP_NAME="CLI-security-group"
 
     ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
@@ -144,6 +144,8 @@ sudo tee -a /etc/sudoers.d/90-cloud-init-users &>/dev/null <<EOF
 # User rules for user1
 user1 ALL=(ALL:ALL) ALL
 EOF
+
+sudo touch /opt/myfile.txt
 
 ! setfacl --help &>/dev/null && sudo apt update && sudo apt install -y acl
 
