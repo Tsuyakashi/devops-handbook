@@ -2,6 +2,13 @@
 
 set -e
 
+# Default config
+AMI_ID="ami-004e960cde33f9146" # ubuntu 24.04
+EC_COUNT=1
+INSTANCE_TYPE="t2.micro"
+KEY_PAIR_NAME="some-key-pair"
+SECURITY_GROUP_NAME="CLI-security-group"
+
 function runInstance() {
     DEFAULT_VPC_ID=$(aws ec2 describe-vpcs \
         --filters Name=isDefault,Values=true \
@@ -57,7 +64,7 @@ function runInstance() {
    
     INSTANCE_ID=$(aws ec2 run-instances \
         --image-id $AMI_ID \
-        --count $EC_COUNT \
+        --count 1 \
         --instance-type $INSTANCE_TYPE \
         --key-name $KEY_PAIR_NAME \
         --security-group-ids $SECURITY_GROUP_ID \
@@ -128,12 +135,6 @@ fi
 }
 
 if [[ "$1" == "--aws" ]]; then
-    AMI_ID="ami-004e960cde33f9146"
-    EC_COUNT=1 
-    INSTANCE_TYPE="t2.micro"
-    KEY_PAIR_NAME="some-key-pair"
-    SECURITY_GROUP_NAME="CLI-security-group"
-
     ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
     # Add configuration complete check
 
