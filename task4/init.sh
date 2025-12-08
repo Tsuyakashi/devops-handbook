@@ -33,11 +33,12 @@ function installPackages() {
 }
 
 function redblueServers() {
-    echo "Starting redblue servers"
+    echo "Starting container servers"
     ! docker -v &>/dev/null && echo "Docker error" && exit 1
 
     ! sudo docker ps | grep red &>/dev/null && sudo docker run -d -p 8001:80 tsuyakashi/task4-red-server
     ! sudo docker ps | grep blue &>/dev/null && sudo docker run -d -p 8002:80 tsuyakashi/task4-blue-server
+    ! sudo docker ps | grep doom &>/dev/null && sudo docker run -d -p 8003:8000 tsuyakashi/mycool:pacman
 
     echo "Containers started"
 }
@@ -54,6 +55,10 @@ upstream redblue_servers {
     server localhost:8002;
 }
 
+upstream secondserver {
+    server localhost:8003;
+}
+
 server {
     listen       80;
     listen       [::]:80;
@@ -61,21 +66,42 @@ server {
     root /opt/dkt/;
     index index.html;
 
+    location /secondpage {
+        root opt/dkt/secondpage/;
+        try_files /secondpage.html =404;
+    }
+
     location /redblue {
         proxy_pass http://redblue_servers/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
         
         # Логирование для отслеживания балансировки
         access_log /var/log/nginx/redblue_access.log;
     }
-} 
+
+    location /music {
+        root /opt/dkt/;
+        try_files /KSBmuzic-Otchim.mp3 =404;
+    }
+
+
+    location /secondserver/ {
+        proxy_pass http://secondserver/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$remote_addr;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location = /secondserver {
+        return 301 /secondserver/;
+    }
+}
 EOF
 
-    mkdir -p /opt/dkt
+    mkdir -p /opt/dkt/secondpage/
+    mv ~/KSBmuzic-Otchim.mp3 /opt/dkt/
     mv ~/index.html /opt/dkt/index.html
+    cp /opt/dkt/index.html /opt/dkt/secondpage/secondpage.html
 
     sudo nginx -t
     sudo systemctl restart nginx
@@ -105,12 +131,12 @@ if [[ "$MODE" == "KVM" ]]; then
 
     VM_NAME="Ubuntu-Noble"
 
-    ! virsh list --all --name | grep -q "$VM_NAME" && echo "(!! sudo required !!)" && sudo ./kvm-install.sh --full --dist ubuntu
+    ! virsh list --all --name | grep -q "$VM_NAME" && echo "(!! sudo required !!)" && sudo ./scripts/kvm-install.sh --full --dist ubuntu
     VM_IP=$(virsh domifaddr $VM_NAME | awk '/ipv4/ { split($4, a, "/"); print a[1] }')
     
     scp -i ./keys/rsa.key \
         -o StrictHostKeyChecking=accept-new \
-        ./{init.sh,src/index.html} \
+        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3} \
         ubuntu@$VM_IP:~/
 
     ssh -t -i ./keys/rsa.key \
@@ -121,7 +147,9 @@ if [[ "$MODE" == "KVM" ]]; then
 fi
 
 if [[ "$MODE" == "AWS" ]]; then
-    echo "NOT supported yet"
+    echo "Running in AWS mode"
+
+    
     exit 1
 fi
 

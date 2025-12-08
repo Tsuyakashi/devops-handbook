@@ -29,6 +29,12 @@ function runInstance() {
             --protocol tcp \
             --port 22 \
             --cidr 0.0.0.0/0
+
+        aws ec2 authorize-security-group-ingress \
+            --group-id $SECURITY_GROUP_ID \
+            --protocol tcp \
+            --port 80 \
+            --cidr 0.0.0.0/0
     fi
     [[ $SECURITY_GROUP_ID == "None" ]] && echo "Error returning sg id" && exit 1
 
