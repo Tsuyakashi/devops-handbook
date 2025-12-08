@@ -44,7 +44,7 @@ function redblueServers() {
 
 function upNginx() {
     echo "Standing up nginx"
-    ! dpkg -s nginx &>/dev/null && "Nginx package error" && exit 1
+    ! dpkg -s nginx &>/dev/null && echo "Nginx package error" && exit 1
 
     sudo rm -f /etc/nginx/sites-enabled/default
 
