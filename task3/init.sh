@@ -139,7 +139,8 @@ else
 fi
 }
 
-AWS_FLAG=FALSE
+AWS_FLAG=false
+USER_CONFIGURE_FLAG=true
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -153,6 +154,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --aws)
             AWS_FLAG=true
+            shift
+            ;;
+        --no-auto-user-configure)
+            USER_CONFIGURE_FLAG=false
             shift
             ;;
         *)
@@ -177,15 +182,16 @@ if [[ "$AWS_FLAG" == "true" ]]; then
                 echo "Instance did not accesible yet"
         done
 
-        scp -i ./keys/$KEY_PAIR_NAME.pem \
-            -o StrictHostKeyChecking=accept-new \
-            ./init.sh \
-            ubuntu@$INSTANCE_IP:~/
+        if [[ "$USER_CONFIGURE_FLAG" == true ]]
+            scp -i ./keys/$KEY_PAIR_NAME.pem \
+                -o StrictHostKeyChecking=accept-new \
+                ./init.sh \
+                ubuntu@$INSTANCE_IP:~/
 
-        ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
-            -o StrictHostKeyChecking=accept-new \
-            ubuntu@$INSTANCE_IP \
-            "sudo ./init.sh" 
+            ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
+                -o StrictHostKeyChecking=accept-new \
+                ubuntu@$INSTANCE_IP \
+                "sudo ./init.sh" 
     done
 else 
     userConfigure
