@@ -22,13 +22,13 @@ function runInstance() {
             --group-name $SECURITY_GROUP_NAME \
             --description "SG created from CLI" \
             --vpc-id $DEFAULT_VPC_ID &>/dev/null; then
-        echo "Security group allready exist"
+        echo "Security group already exist"
         SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
             --filters Name=vpc-id,Values=$DEFAULT_VPC_ID Name=group-name,Values=$SECURITY_GROUP_NAME \
             --query "SecurityGroups[0].GroupId" \
             --output text)
     else
-        echo "Security do not exist, creating" # :D
+        echo "Security group does not exist, creating" # :D
 
         SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
             --filters Name=vpc-id,Values=$DEFAULT_VPC_ID Name=group-name,Values=$SECURITY_GROUP_NAME \
@@ -55,7 +55,7 @@ function runInstance() {
 
         echo "Key pair already exist"
     else
-        echo "Key pair do now exist, creating..."
+        echo "Key pair does not exist, creating..."
         mkdir -p keys
         aws ec2 create-key-pair \
             --key-name $KEY_PAIR_NAME \
@@ -65,6 +65,7 @@ function runInstance() {
     fi
     
     # Add multiply start with inbuild counter 
+    echo "Running instance"
     INSTANCE_ID=$(aws ec2 run-instances \
         --image-id $AMI_ID \
         --count 1 \
@@ -75,8 +76,9 @@ function runInstance() {
         --associate-public-ip-address \
         --query 'Instances[0].InstanceId' \
         --output text )
-    [[ INSTANCE_ID == "None" ]] && echo "Error returning instance id" && exit 1
+    [[ $INSTANCE_ID == "None" ]] && echo "Error returning instance id" && exit 1
 
+    echo "Waiting instance run"
     aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
 
     INSTANCE_IP=$(aws ec2 describe-instances \
@@ -143,7 +145,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --count)
             if [[ -z "$2" ]]; then
-                echo "Error: --cout requires num"
+                echo "Error: --count requires num"
                 exit 1
             fi
             EC_COUNT=$2
@@ -161,9 +163,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 
-if [ AWS_FLAG == true ]; then
+if [[ "$AWS_FLAG" == "true" ]]; then
     ! aws --version &>/dev/null && echo "AWS CLI is not installed, full install not supported" && exit 1
-    ! -f ~/.aws/config && echo "AWS config do not exist" && exit 1
+    # ! -f ~/.aws/credentials && echo "AWS config do not exist" && exit 1
 
     for ((i=1; i<=EC_COUNT; i++)) do
         echo "Starting instance #$i"
