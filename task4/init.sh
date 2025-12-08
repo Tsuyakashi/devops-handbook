@@ -67,7 +67,7 @@ server {
     index index.html;
 
     location /secondpage {
-        root opt/dkt/secondpage/;
+        root /opt/dkt/secondpage/;
         try_files /secondpage.html =404;
     }
 
@@ -142,14 +142,14 @@ if [[ "$MODE" == "KVM" ]]; then
     ssh -t -i ./keys/rsa.key \
         -o StrictHostKeyChecking=accept-new \
         ubuntu@$VM_IP \
-        "MODE="INSTANCE" sudo -E ./init.sh" 
+        "MODE=\"INSTANCE\" sudo -E ./init.sh" 
 
 fi
 
 if [[ "$MODE" == "AWS" ]]; then
     echo "Running in AWS mode"
 
-    
+
     exit 1
 fi
 
