@@ -1,5 +1,16 @@
 #!/bin/bash
 
+set -e
+
+# Default config
+AMI_ID="ami-004e960cde33f9146" # ubuntu 24.04
+EC_COUNT=1
+INSTANCE_TYPE="t2.micro"
+KEY_PAIR_NAME="some-key-pair"
+SECURITY_GROUP_NAME="CLI-security-group"
+
+ROOT_PASSWORD="root123"
+
 function runInstance() {
     DEFAULT_VPC_ID=$(aws ec2 describe-vpcs \
         --filters Name=isDefault,Values=true \
@@ -58,7 +69,8 @@ function runInstance() {
             --output text > ./keys/$KEY_PAIR_NAME.pem
         chmod 600 ./keys/$KEY_PAIR_NAME.pem 
     fi
-    
+    [ ! -f ./keys/"$KEY_PAIR_NAME".pem ] && echo "Key pair do not exist locally" && exit 1
+
     # Add multiply start with inbuild counter 
     echo "Running instance"
     INSTANCE_ID=$(aws ec2 run-instances \

@@ -148,9 +148,27 @@ fi
 
 if [[ "$MODE" == "AWS" ]]; then
     echo "Running in AWS mode"
+    source ./scripts/run-instance.sh
 
 
-    exit 1
+    [[ "$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --output text)" == "" ]] \
+        && runInstance
+
+    # INSTANCE_IP="3.121.114.42"
+    # echo "ip is $INSTANCE_IP"
+
+
+    scp -i ./keys/$KEY_PAIR_NAME.pem \
+        -o StrictHostKeyChecking=accept-new \
+        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3} \
+        ubuntu@$INSTANCE_IP:~/
+    
+    ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
+        -o StrictHostKeyChecking=accept-new \
+        ubuntu@$INSTANCE_IP \
+        "MODE=\"INSTANCE\" sudo -E ./init.sh" 
+
+    
 fi
 
 if [[ "$MODE" == "INSTANCE" ]]; then
