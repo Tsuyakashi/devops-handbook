@@ -28,8 +28,10 @@ function installPackages() {
     done
 
     if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo "Updating apt packages"
         sudo apt update &>/dev/null 
         for package in "${missing_packages[@]}"; do
+            echo "Installing $package"
             sudo apt install -y "$package" &>/dev/null
         done
     fi
