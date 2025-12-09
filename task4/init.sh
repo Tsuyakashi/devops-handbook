@@ -5,10 +5,13 @@ set -e
 ! [[ $MODE == "INSTANCE" ]] && MODE="KVM" # DEFAULT MODE
 
 function configureInstance() {
-    installPackages "nginx" "docker.io"
-    redblueServers
+    installPackages "nginx" "docker.io" 
+    containerServers
+    [ ! -f /etc/apt/sources.list.d/nginx.list ] && nginxModuleDancing
     upNginx
-    ! snap list | grep certbot && getCertification
+    ! snap list | grep certbot &>/dev/null && getCertification
+
+    echo "OK"
 }
 
 function installPackages() {
@@ -33,7 +36,22 @@ function installPackages() {
     echo "All packages installed"
 }
 
-function redblueServers() {
+function nginxModuleDancing() {
+    sudo apt update
+    sudo apt install -y curl gnupg2 ca-certificates lsb-release ubuntu-keyring
+    curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
+        | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
+    http://nginx.org/packages/ubuntu $(lsb_release -cs) nginx" \
+        | sudo tee /etc/apt/sources.list.d/nginx.list
+    echo -e "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" \
+        | sudo tee /etc/apt/preferences.d/99nginx
+    sudo apt update
+    sudo apt install -y nginx-module-image-filter
+
+}
+
+function containerServers() {
     echo "Starting container servers"
     ! docker -v &>/dev/null && echo "Docker error" && exit 1
 
@@ -50,6 +68,9 @@ function upNginx() {
     ! dpkg -s nginx &>/dev/null && echo "Nginx package error" && exit 1
 
     sudo rm -f /etc/nginx/sites-enabled/default
+
+    ! sudo grep "load_module modules/ngx_http_image_filter_module.so;" /etc/nginx/nginx.conf &&
+        sudo sed -i '1i load_module modules/ngx_http_image_filter_module.so;' /etc/nginx/nginx.conf
 
     sudo tee /etc/nginx/conf.d/dkt.conf > /dev/null <<EOF
 upstream php_server {
@@ -103,6 +124,18 @@ server {
         return 301 /secondserver/;
     }
 
+    location /image1 {
+        root /opt/dkt/;
+        try_files /pexels-hernan-berwart-1212356-33729651.jpg =404;
+        image_filter off;
+    }
+
+    location /image2 {
+        root /opt/dkt/;
+        try_files /pexels-hernan-berwart-1212356-33729651.png =404;
+        image_filter rotate 180;
+    }
+
     location /redblue {
         proxy_pass http://redblue_servers/;
         
@@ -116,6 +149,9 @@ EOF
     mv ~/KSBmuzic-Otchim.mp3 /opt/dkt/
     mv ~/index.html /opt/dkt/index.html
     mv ~/secondpage.html /opt/dkt/secondpage/secondpage.html
+    mv ~/*.jpg /opt/dkt/image1.jpg
+    mv ~/*.png /opt/dkt/image2.png
+    rm ~/red.html ~/blue.html
 
     sudo nginx -t
     sudo systemctl restart nginx
@@ -175,7 +211,7 @@ if [[ "$MODE" == "KVM" ]]; then
     
     scp -i ./keys/rsa.key \
         -o StrictHostKeyChecking=accept-new \
-        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3,src/secondpage.html} \
+        ./{init.sh,src/*} \
         ubuntu@$INSTANCE_IP:~/
 
     ssh -t -i ./keys/rsa.key \
@@ -217,7 +253,7 @@ if [[ "$MODE" == "AWS" ]]; then
 
     scp -i ./keys/$KEY_PAIR_NAME.pem \
         -o StrictHostKeyChecking=accept-new \
-        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3,src/secondpage.html} \
+        ./{init.sh,src/*} \
         ubuntu@$INSTANCE_IP:~/
     
     ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
