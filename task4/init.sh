@@ -38,7 +38,7 @@ function redblueServers() {
 
     ! sudo docker ps | grep red &>/dev/null && sudo docker run -d -p 8001:80 tsuyakashi/task4-red-server
     ! sudo docker ps | grep blue &>/dev/null && sudo docker run -d -p 8002:80 tsuyakashi/task4-blue-server
-    ! sudo docker ps | grep doom &>/dev/null && sudo docker run -d -p 8003:8000 tsuyakashi/mycool:pacman
+    ! sudo docker ps | grep pacman &>/dev/null && sudo docker run -d -p 8003:8000 tsuyakashi/mycool:pacman
 
     echo "Containers started"
 }
@@ -131,17 +131,36 @@ if [[ "$MODE" == "KVM" ]]; then
 
     VM_NAME="Ubuntu-Noble"
 
-    ! virsh list --all --name | grep -q "$VM_NAME" && echo "(!! sudo required !!)" && sudo ./scripts/kvm-install.sh --full --dist ubuntu
-    VM_IP=$(virsh domifaddr $VM_NAME | awk '/ipv4/ { split($4, a, "/"); print a[1] }')
+    if ! virsh list --all --name | grep -q "$VM_NAME"; then 
+        echo "(!! sudo required !!)"
+        sudo ./scripts/kvm-install.sh --full --dist ubuntu
+    elif ! virsh list --name | grep -q "$VM_NAME"; then 
+        echo "VM exists, but shutoff, starting" 
+        virsh start "$VM_NAME" &>/dev/null
+        INSTANCE_IP=$(virsh domifaddr $VM_NAME | awk '/ipv4/ { split($4, a, "/"); print a[1] }')  
+        for i in {1..36}; do
+            if ! nc -z "$INSTANCE_IP" 22; then
+                [[ $i -eq 36 ]] && \
+                    echo "Instance does not become accessible in time" && \
+                    exit 1
+                echo "Instance is still starting $(($i*5-5))/180"
+                sleep 5
+            else 
+                echo "Instance accessible on host $INSTANCE_IP" && break
+            fi
+        done
+    fi
+
+    INSTANCE_IP=$(virsh domifaddr $VM_NAME | awk '/ipv4/ { split($4, a, "/"); print a[1] }')
     
     scp -i ./keys/rsa.key \
         -o StrictHostKeyChecking=accept-new \
         ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3} \
-        ubuntu@$VM_IP:~/
+        ubuntu@$INSTANCE_IP:~/
 
     ssh -t -i ./keys/rsa.key \
         -o StrictHostKeyChecking=accept-new \
-        ubuntu@$VM_IP \
+        ubuntu@$INSTANCE_IP \
         "MODE=\"INSTANCE\" sudo -E ./init.sh" 
 
 fi
@@ -151,12 +170,30 @@ if [[ "$MODE" == "AWS" ]]; then
     source ./scripts/run-instance.sh
 
 
-    [[ "$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --output text)" == "" ]] \
-        && runInstance
+    if [[ "$(aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --output text)" == "" ]]; then
+        runInstance
+        echo "$INSTANCE_IP" | tee /tmp/task4_instance_ip.var 
+    else 
+        [[ ! -f /tmp/task4_instance_ip.var ]] && \
+            echo "Error with parsing instance ip from tmp" && exit 1
+        INSTANCE_IP=$(cat /tmp/task4_instance_ip.var)
+    fi
+    
 
-    # INSTANCE_IP="3.121.114.42"
-    # echo "ip is $INSTANCE_IP"
+    for i in {1..36}; do
+        if ! nc -z "$INSTANCE_IP" 22; then
+            [[ $i -eq 36 ]] && \
+                echo "Instance does not become accessible in time" && \
+                exit 1
+            echo "Instance is still starting $(($i*5-5))/180"
+            sleep 5
+        else 
+            echo "Instance accessible on host $INSTANCE_IP" && break
+        fi
+    done
 
+
+    
 
     scp -i ./keys/$KEY_PAIR_NAME.pem \
         -o StrictHostKeyChecking=accept-new \
