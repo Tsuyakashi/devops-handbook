@@ -51,17 +51,17 @@ function upNginx() {
     sudo rm -f /etc/nginx/sites-enabled/default
 
     sudo tee /etc/nginx/conf.d/dkt.conf > /dev/null <<EOF
-upstream redblue_servers {
-    server localhost:8001;
-    server localhost:8002;
+upstream php_server {
+    server localhost:8008;
 }
 
 upstream secondserver {
     server localhost:8003;
 }
 
-upstream php_server {
-    server localhost:8008;
+upstream redblue_servers {
+    server localhost:8001;
+    server localhost:8002;
 }
 
 server {
@@ -76,22 +76,14 @@ server {
         try_files /secondpage.html =404;
     }
 
-    location /info.php {
-        proxy_pass http://php_server/info.php;
-    }
-
-    location /redblue {
-        proxy_pass http://redblue_servers/;
-        
-        # Логирование для отслеживания балансировки
-        access_log /var/log/nginx/redblue_access.log;
-    }
-
     location /music {
         root /opt/dkt/;
         try_files /KSBmuzic-Otchim.mp3 =404;
     }
 
+    location /info.php {
+        proxy_pass http://php_server/info.php;
+    }
 
     location /secondserver/ {
         proxy_pass http://secondserver/;
@@ -99,6 +91,13 @@ server {
     
     location = /secondserver {
         return 301 /secondserver/;
+    }
+
+    location /redblue {
+        proxy_pass http://redblue_servers/;
+        
+        # Логирование для отслеживания балансировки
+        access_log /var/log/nginx/redblue_access.log;
     }
 }
 EOF
