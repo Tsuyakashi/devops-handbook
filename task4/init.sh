@@ -7,9 +7,10 @@ set -e
 function configureInstance() {
     installPackages "nginx" "docker.io" 
     containerServers
-    [ ! -f /etc/apt/sources.list.d/nginx.list ] && nginxModuleDancing
-    upNginx
+    [ ! -f /etc/apt/sources.list.d/nginx.list &>/dev/null ] && nginxModuleDancing
+    [ ! -f /etc/nginx/conf.d/dkt.conf &>/dev/null ] && sudopreInstallNginx
     ! snap list | grep certbot &>/dev/null && getCertification
+    upNginx
 
     echo "OK"
 }
@@ -63,15 +64,33 @@ function containerServers() {
     echo "Containers started"
 }
 
-function upNginx() {
-    echo "Standing up nginx"
+function preInstallNginx() {
+    echo "Prepering nginx"
     ! dpkg -s nginx &>/dev/null && echo "Nginx package error" && exit 1
 
     sudo rm -f /etc/nginx/sites-enabled/default
+    sudo rm -f /etc/nginx/conf.d/default.conf
 
     ! sudo grep "load_module modules/ngx_http_image_filter_module.so;" /etc/nginx/nginx.conf &&
         sudo sed -i '1i load_module modules/ngx_http_image_filter_module.so;' /etc/nginx/nginx.conf
+    sudo tee /etc/nginx/conf.d/dkt.conf > /dev/null <<EOF
+server {
+    listen       80;
+    listen       [::]:80;
+    server_name  trainee.servebeer.com;
+    return 301 https://$host$request_uri;
+}
+EOF
+    sudo systemctl restart nginx
+}
 
+function getCertification() {
+    sudo snap install --classic certbot
+    sudo ln -s /snap/bin/certbot /usr/bin/certbot
+    sudo certbot certonly --nginx
+}
+
+function upNginx() {
     sudo tee /etc/nginx/conf.d/dkt.conf > /dev/null <<EOF
 upstream php_server {
     server localhost:8008;
@@ -127,13 +146,13 @@ server {
 
     location /image1 {
         root /opt/dkt/;
-        try_files /pexels-hernan-berwart-1212356-33729651.jpg =404;
+        try_files /image1.jpg =404;
         image_filter off;
     }
 
     location /image2 {
         root /opt/dkt/;
-        try_files /pexels-hernan-berwart-1212356-33729651.png =404;
+        try_files /image2.png =404;
         image_filter rotate 180;
     }
 
@@ -156,12 +175,6 @@ EOF
 
     sudo nginx -t
     sudo systemctl restart nginx
-}
-
-function getCertification() {
-    sudo snap install --classic certbot
-    sudo ln -s /snap/bin/certbot /usr/bin/certbot
-    sudo certbot certonly --nginx
 }
 
 while [[ $# -gt 0 ]]; do
