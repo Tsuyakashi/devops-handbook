@@ -40,6 +40,8 @@ function installPackages() {
 }
 
 function nginxModuleDancing() {
+    echo "Dancing with nginx modules"
+
     sudo apt update
     sudo apt install -y curl gnupg2 ca-certificates lsb-release ubuntu-keyring
     curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
@@ -52,6 +54,7 @@ function nginxModuleDancing() {
     sudo apt update
     sudo apt install -y nginx-module-image-filter
 
+    echo "Nginx module installed"
 }
 
 function containerServers() {
@@ -84,15 +87,23 @@ server {
 }
 EOF
     sudo systemctl restart nginx
+
+    echo "Nginx prepared"
 }
 
 function getCertification() {
+    echo "Trying get certification"
+
     sudo snap install --classic certbot
     sudo ln -s /snap/bin/certbot /usr/bin/certbot
     sudo certbot certonly --nginx
+
+    echo "Certification complete"
 }
 
 function upNginx() {
+    echo "Setting up nginx"
+
     sudo tee /etc/nginx/conf.d/dkt.conf > /dev/null <<EOF
 upstream php_server {
     server localhost:8008;
