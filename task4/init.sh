@@ -8,6 +8,7 @@ function configureInstance() {
     installPackages "nginx" "docker.io"
     redblueServers
     upNginx
+    ! snap list | grep certbot && getCertification
 }
 
 function installPackages() {
@@ -67,7 +68,16 @@ upstream redblue_servers {
 server {
     listen       80;
     listen       [::]:80;
-    server_name  ${HOSTNAME};
+    server_name  trainee.servebeer.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+
+    ssl_certificate /etc/letsencrypt/live/trainee.servebeer.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/trainee.servebeer.com/privkey.pem;
+
     root /opt/dkt/;
     index index.html;
 
@@ -109,6 +119,12 @@ EOF
 
     sudo nginx -t
     sudo systemctl restart nginx
+}
+
+function getCertification() {
+    sudo snap install --classic certbot
+    sudo ln -s /snap/bin/certbot /usr/bin/certbot
+    sudo certbot certonly --nginx
 }
 
 while [[ $# -gt 0 ]]; do
