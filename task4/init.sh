@@ -8,7 +8,7 @@ function configureInstance() {
     installPackages "nginx" "docker.io" 
     containerServers
     [ ! -f /etc/apt/sources.list.d/nginx.list &>/dev/null ] && nginxModuleDancing
-    [ ! -f /etc/nginx/conf.d/dkt.conf &>/dev/null ] && sudopreInstallNginx
+    [ ! -f /etc/nginx/conf.d/dkt.conf &>/dev/null ] && preInstallNginx
     ! snap list | grep certbot &>/dev/null && getCertification
     upNginx
 
