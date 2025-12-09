@@ -34,4 +34,19 @@ services:
                 CMD ["nginx", "-g", "daemon off;"]
         ports: 
          - 8002:80 
-    
+
+
+    php-server:
+        build: 
+            context: .
+            dockerfile_inline: |
+                FROM alpine:latest
+                RUN apk add --no-cache php
+                WORKDIR /app
+                RUN echo ' <?php \
+                    phpinfo(); \
+                    S?>' > /app/info.php
+                EXPOSE 80
+                CMD ["php", "-S", "0.0.0.0:80"]
+        ports:
+         - 8008:80

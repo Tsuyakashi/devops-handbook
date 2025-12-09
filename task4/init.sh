@@ -39,6 +39,7 @@ function redblueServers() {
     ! sudo docker ps | grep red &>/dev/null && sudo docker run -d -p 8001:80 tsuyakashi/task4-red-server
     ! sudo docker ps | grep blue &>/dev/null && sudo docker run -d -p 8002:80 tsuyakashi/task4-blue-server
     ! sudo docker ps | grep pacman &>/dev/null && sudo docker run -d -p 8003:8000 tsuyakashi/mycool:pacman
+    ! sudo docker ps | grep php &>/dev/null && sudo docker run -d -p 8008:80 tsuyakashi/task4-php-server
 
     echo "Containers started"
 }
@@ -59,6 +60,10 @@ upstream secondserver {
     server localhost:8003;
 }
 
+upstream php_server {
+    server localhost:8008;
+}
+
 server {
     listen       80;
     listen       [::]:80;
@@ -69,6 +74,10 @@ server {
     location /secondpage {
         root /opt/dkt/secondpage/;
         try_files /secondpage.html =404;
+    }
+
+    location /info.php {
+        proxy_pass http://php_server/info.php;
     }
 
     location /redblue {
@@ -101,7 +110,7 @@ EOF
     mkdir -p /opt/dkt/secondpage/
     mv ~/KSBmuzic-Otchim.mp3 /opt/dkt/
     mv ~/index.html /opt/dkt/index.html
-    cp /opt/dkt/index.html /opt/dkt/secondpage/secondpage.html
+    mv ~/secondpage.html /opt/dkt/secondpage/secondpage.html
 
     sudo nginx -t
     sudo systemctl restart nginx
@@ -155,7 +164,7 @@ if [[ "$MODE" == "KVM" ]]; then
     
     scp -i ./keys/rsa.key \
         -o StrictHostKeyChecking=accept-new \
-        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3} \
+        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3,src/secondpage.html} \
         ubuntu@$INSTANCE_IP:~/
 
     ssh -t -i ./keys/rsa.key \
@@ -197,7 +206,7 @@ if [[ "$MODE" == "AWS" ]]; then
 
     scp -i ./keys/$KEY_PAIR_NAME.pem \
         -o StrictHostKeyChecking=accept-new \
-        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3} \
+        ./{init.sh,src/index.html,src/KSBmuzic-Otchim.mp3,src/secondpage.html} \
         ubuntu@$INSTANCE_IP:~/
     
     ssh -t -i ./keys/$KEY_PAIR_NAME.pem \
