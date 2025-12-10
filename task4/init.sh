@@ -166,6 +166,7 @@ server {
     location /music {
         root /opt/dkt/;
         try_files /KSBmuzic-Otchim.mp3 =404;
+        add_header Content-Disposition "attachment";
     }
 
     location /info.php {
