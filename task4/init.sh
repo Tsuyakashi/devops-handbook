@@ -66,6 +66,13 @@ function containerServers() {
     ! sudo docker ps | grep pacman &>/dev/null && sudo docker run -d -p 8003:8000 tsuyakashi/mycool:pacman
     ! sudo docker ps | grep php &>/dev/null && sudo docker run -d -p 8008:80 tsuyakashi/task4-php-server
 
+    ! sudo docker ps | grep doom &>/dev/null && sudo docker run -d -p 8004:8000 tsuyakashi/mycool:doom
+    ! sudo docker ps | grep keen &>/dev/null && sudo docker run -d -p 8005:8000 tsuyakashi/mycool:keen
+    ! sudo docker ps | grep scorch &>/dev/null && sudo docker run -d -p 8006:8000 tsuyakashi/mycool:scorch
+    ! sudo docker ps | grep bomberman &>/dev/null && sudo docker run -d -p 8007:8000 tsuyakashi/mycool:bomberman
+
+
+
     echo "Containers started"
 }
 
@@ -114,9 +121,25 @@ upstream secondserver {
 }
 
 upstream redblue_servers {
+    least_conn;
     server localhost:8001;
     server localhost:8002;
 }
+
+# USELESS
+upstream doom {
+    server localhost:8004;
+}
+upstream keen {
+    server localhost:8005;
+}
+upstream scorch {
+    server localhost:8006;
+}
+upstream bomberman {
+    server localhost:8007;
+}
+# USELESS
 
 server {
     listen       80;
@@ -175,6 +198,38 @@ server {
         # Логирование для отслеживания балансировки
         access_log /var/log/nginx/redblue_access.log;
     }
+
+    # useless
+    location /doom/ {
+        proxy_pass http://doom/;
+    }
+    
+    location = /doom {
+        return 301 /doom/;
+    }
+    location /keen/ {
+        proxy_pass http://keen/;
+    }
+    
+    location = /keen {
+        return 301 /keen/;
+    }
+    location /scorch/ {
+        proxy_pass http://scorch/;
+    }
+    
+    location = /scorch {
+        return 301 /scorch/;
+    }
+    location /bomberman/ {
+        proxy_pass http://bomberman/;
+    }
+    
+    location = /bomberman {
+        return 301 /bomberman/;
+    }
+    # useless
+
 }
 EOF
 
