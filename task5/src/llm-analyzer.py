@@ -40,7 +40,7 @@ def analyze_logs(log_file: str, prompt_file: str, temperature: float, top_p: flo
 
     try:
         # Create Gemini model
-        model = genai.GenerativeModel("models/gemini-2.0-flash")
+        model = genai.GenerativeModel("models/gemini-2.5-flash")
 
         response = model.generate_content(
             prompt,

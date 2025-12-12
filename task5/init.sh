@@ -60,11 +60,11 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
 
-        # proxy_set_header Host \$host;
-        # proxy_set_header X-Real-IP \$remote_addr;
-        # proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
 
-        # proxy_read_timeout 86400;
+        proxy_read_timeout 86400;
     }
 }
 EOF
@@ -91,14 +91,18 @@ function setupLogDaemon() {
 }
 
 function setupLogAnalyzer() {
+    echo "Setting up log analyzer"
+
     ! python3 --version >/dev/null &&  echo "Python3 not installed" && exit 1
 
     python3 -m venv venv
     source venv/bin/activate
 
-    pip install -r requirements.txt >/dev/null
+    pip install -r requirements.txt #/dev/null
 
     python3 ~/llm-analyzer.py --logfile /tmp/nginx_logger_daemon/file1.log --promptfile ~/promt_file.txt --temperature 0.2
+
+    echo "Log analyzer set up"
 }
 
 function awsInstance () {
