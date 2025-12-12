@@ -68,6 +68,8 @@ server {
     }
 }
 EOF
+
+    # Отваливается, поставить чек на порт, килл и запуск
     if ! sudo netstat -tulnp | grep -q 7681; then
         nohup ttyd -p 7681 htop > /dev/null 2>&1 &
         sleep 2
