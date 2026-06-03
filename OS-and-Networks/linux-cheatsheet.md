@@ -1,13 +1,19 @@
+<a id="foundation-os"></a>
+
 # Foundation & OS:
 
-- Linux: Ubuntu (base), RHEL/AlmaLinux (vs old CentOS)
-- bash (scripting, grep/sed/awk)
+- Linux: [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [apt/Snap](#apt-snap)); RHEL/AlmaLinux (vs old CentOS)
+- bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
 - virtualization (kvm, qemu) + vagrant
 - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
+
+<a id="bash-scripting"></a>
 
 # Bash scripting
 
 **Когда что использовать:** grep — найти строки по шаблону; sed — потоковое редактирование (замена, удаление, выбор строк); awk — столбцы, числа, агрегации по полям.
+
+<a id="grep"></a>
 
 ## grep
 ```
@@ -33,6 +39,8 @@ grep [флаги] 'шаблон' [имя_файла]
 $ — конец строки (например, end$ найдет строки, заканчивающиеся на end).
 . — любой одиночный символ.
 .* — любая последовательность символов (`*` в обычном режиме — квантификатор предыдущего символа; с `-E` синтаксис проще).
+
+<a id="sed"></a>
 
 ## sed
 
@@ -70,6 +78,8 @@ sed [флаги] 'команда' имя_файла
     - `sed -n '5p' file.txt` — напечатать только 5-ю строку.
     - `sed -n '2,10p' file.txt` — напечатать строки с 2 по 10.
     - `sed -n '/pattern/p' file.txt` — напечатать только строки с pattern (аналог grep).
+
+<a id="awk"></a>
 
 ## awk
 
@@ -118,6 +128,8 @@ awk '[условие] {действие}' имя_файла
     - `awk '{sum += $1} END {print sum}' file.txt` — посчитать сумму всех чисел в первом столбце.
     - `awk 'END {print NR}' file.txt` — количество прочитанных записей (обычно как `wc -l`; может отличаться, если в файле нет завершающего перевода строки).
 
+<a id="ubuntu"></a>
+
 # Ubuntu
 
 В контексте AWS уже есть опыт взаимодействия с Ubuntu. Ubuntu де-факто является стандартом в серверной части. Также удобен в использовании как десктопная OS (по моему мнению, потому что достаточно популярна в сообществе и, вследствие этого, хорошо приспособлена для пользователя).
@@ -126,10 +138,14 @@ awk '[условие] {действие}' имя_файла
 
 Актуальные версии и ядро не фиксировать «навсегда» в заметках — сверяться с [Ubuntu Releases](https://wiki.ubuntu.com/Releases) и на живой системе: `uname -r`. В документации Canonical ядро указывают как конкретный пакет `linux-image` из стека релиза (например, 6.x у 24.04), а не как «Linux 7.0» абстрактно.
 
+<a id="desktop"></a>
+
 ### Desktop
 
 - Назначение: рабочая станция с GUI (GNOME и др.), офис, браузер, IDE.
 - Отличие от Server: графическая сессия, consumer-приложения, часто **Snap Store** и **NetworkManager**; не минимальный headless-набор под сервисы в DC/облаке.
+
+<a id="server-vs-desktop"></a>
 
 ### Server vs Desktop
 
@@ -139,11 +155,15 @@ awk '[условие] {действие}' имя_файла
 | Пакеты по умолчанию | сервисы, CLI, cloud-инструменты | DE, мультимедиа, офис |
 | Типичное использование | VPS, AWS EC2, CI, контейнер-хост | ноутбук, рабочая станция |
 
+<a id="wsl"></a>
+
 ### WSL
 
 - **Зачем:** Linux-окружение на Windows без отдельной VM (разработка, bash, apt).
 - **Плюсы:** интеграция с Windows, быстрый старт, общая файловая система (`/mnt/c/...`).
 - **Минусы:** PowerShell как «главная» оболочка Windows vs привычный Linux-терминал; для **вложенной виртуализации** (Docker/KVM внутри WSL) нужны настройки и WSL2; **WSL1** без полноценного Linux-ядра (устаревший режим, нет нормального systemd); **WSL2** — реальное ядро в lightweight VM, systemd и сервисы ближе к «настоящему» Linux.
+
+<a id="server"></a>
 
 ### Server
 
@@ -154,6 +174,8 @@ awk '[условие] {действие}' имя_файла
 - **curtin** — установщик «под капотом» автоматических и облачных установок (Subiquity/autoinstall, образы для AWS/Azure/GCP, MAAS). Разметка дисков, монтирование, базовая настройка до первого boot; на уже работающей VM почти не используется.
 - **cloud-init** — первая настройка при старте (SSH-ключи, hostname, user-data, пакеты из метаданных). Есть в **серверных и облачных** образах (EC2, Azure, GCP), не только в отдельном SKU «Cloud».
 
+<a id="cloud"></a>
+
 ### Cloud
 
 Оптимизированные образы под AWS, Azure, Google Cloud (по сути Server + тюнинг под гипервизор/облако).
@@ -162,13 +184,19 @@ awk '[условие] {действие}' имя_файла
 - **netplan** — та же схема, что на Server; сеть часто поднимается из метаданных/cloud-init (DHCP, статика из user-data).
 - **curtin** — при **сборке** официальных cloud-образов и autoinstall, не при каждом обычном reboot VM.
 
+<a id="ubuntu-core"></a>
+
 ### Ubuntu Core
 
 Максимально урезанная, immutable ОС для IoT, робототехники и edge; пакеты и система — через **Snap**. На обычном **Ubuntu Server LTS** в AWS Snap **не обязателен** (многие ставят только `.deb` через apt). **Core** — отдельный продукт, не путать с AMI «Ubuntu Server 24.04/26.04».
 
+<a id="ubuntu-flavors"></a>
+
 ### Ubuntu Flavors (дистрибутивы-«вкусы»)
 
 Официальные сборки **Ubuntu Desktop** с другими DE вместо GNOME: Kubuntu (KDE), Xubuntu (XFCE), Lubuntu (LXQt) и др. От Server не заменяют — это варианты десктопа.
+
+<a id="apt-snap"></a>
 
 ### Пакеты: apt и Snap
 
