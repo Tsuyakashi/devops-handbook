@@ -2,27 +2,6 @@
 
 Collection of cheesheets
 
-## OS-and-Networks
-
-Шпаргалка: **[linux-cheatsheet.md](OS-and-Networks/linux-cheatsheet.md)**
-
-| Раздел | Ссылка |
-|--------|--------|
-| Foundation & OS | [foundation-os](OS-and-Networks/linux-cheatsheet.md#foundation-os) |
-| Bash scripting | [bash-scripting](OS-and-Networks/linux-cheatsheet.md#bash-scripting) |
-| grep | [grep](OS-and-Networks/linux-cheatsheet.md#grep) |
-| sed | [sed](OS-and-Networks/linux-cheatsheet.md#sed) |
-| awk | [awk](OS-and-Networks/linux-cheatsheet.md#awk) |
-| Ubuntu | [ubuntu](OS-and-Networks/linux-cheatsheet.md#ubuntu) |
-| Desktop | [desktop](OS-and-Networks/linux-cheatsheet.md#desktop) |
-| Server vs Desktop | [server-vs-desktop](OS-and-Networks/linux-cheatsheet.md#server-vs-desktop) |
-| WSL | [wsl](OS-and-Networks/linux-cheatsheet.md#wsl) |
-| Server | [server](OS-and-Networks/linux-cheatsheet.md#server) |
-| Cloud | [cloud](OS-and-Networks/linux-cheatsheet.md#cloud) |
-| Ubuntu Core | [ubuntu-core](OS-and-Networks/linux-cheatsheet.md#ubuntu-core) |
-| Flavors | [ubuntu-flavors](OS-and-Networks/linux-cheatsheet.md#ubuntu-flavors) |
-| apt и Snap | [apt-snap](OS-and-Networks/linux-cheatsheet.md#apt-snap) |
-
 Future sctructure:
 ```
 .
@@ -47,9 +26,9 @@ Future sctructure:
 ```
 
 ## Base focus
-- Foundation & OS ([шпаргалка](OS-and-Networks/linux-cheatsheet.md#foundation-os)):
-    - Linux: Ubuntu ([обзор](OS-and-Networks/linux-cheatsheet.md#ubuntu) — [Desktop](OS-and-Networks/linux-cheatsheet.md#desktop), [Server](OS-and-Networks/linux-cheatsheet.md#server), [Cloud](OS-and-Networks/linux-cheatsheet.md#cloud), [WSL](OS-and-Networks/linux-cheatsheet.md#wsl), [Core](OS-and-Networks/linux-cheatsheet.md#ubuntu-core), [apt/Snap](OS-and-Networks/linux-cheatsheet.md#apt-snap)); RHEL/AlmaLinux (vs old CentOS)
-    - bash ([обзор](OS-and-Networks/linux-cheatsheet.md#bash-scripting), [grep](OS-and-Networks/linux-cheatsheet.md#grep), [sed](OS-and-Networks/linux-cheatsheet.md#sed), [awk](OS-and-Networks/linux-cheatsheet.md#awk))
+- [Foundation & OS](OS-and-Networks/linux-cheatsheet.md#foundation-os):
+    - Linux: [Ubuntu](OS-and-Networks/linux-cheatsheet.md#ubuntu); RHEL/AlmaLinux (vs old CentOS)
+    - bash ([grep](OS-and-Networks/linux-cheatsheet.md#grep), [sed](OS-and-Networks/linux-cheatsheet.md#sed), [awk](OS-and-Networks/linux-cheatsheet.md#awk))
     - virtulization (kvm, qemu) + vagrant
     - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
 
@@ -101,5 +80,3 @@ Future sctructure:
     - MLOps Core: FastAPI (base endpoints for models)
     - Docker for ML: packing python-apps, CUDA, GPU in Container 
     - vLLM, distribution GPU in k8s 
-
-
