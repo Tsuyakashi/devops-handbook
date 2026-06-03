@@ -6,7 +6,7 @@
     - [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [Flavors](#ubuntu-flavors), [apt/Snap](#apt-snap)); 
     - [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
 - bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
-- virtualization (kvm, qemu) + vagrant ([KVM/QEMU](#kvm-qemu), [Vagrant](#vagrant))
+- virtualization ([обзор](#virtualization)): [KVM/QEMU](#kvm-qemu), [Vagrant](#vagrant)
 - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
 
 <a id="ubuntu"></a>
@@ -42,7 +42,7 @@
 
 - **Зачем:** Linux-окружение на Windows без отдельной VM (разработка, bash, apt).
 - **Плюсы:** интеграция с Windows, быстрый старт, общая файловая система (`/mnt/c/...`).
-- **Минусы:** PowerShell как «главная» оболочка Windows vs привычный Linux-терминал; для **вложенной виртуализации** (Docker/KVM внутри WSL) нужны настройки и WSL2; **WSL1** без полноценного Linux-ядра (устаревший режим, нет нормального systemd); **WSL2** — реальное ядро в lightweight VM, systemd и сервисы ближе к «настоящему» Linux.
+- **Минусы:** PowerShell как «главная» оболочка Windows vs привычный Linux-терминал; для **вложенной виртуализации** (Docker/KVM внутри WSL) — WSL2 и отдельные настройки (см. [KVM/QEMU](#kvm-qemu)); **WSL1** без полноценного Linux-ядра (устаревший режим, нет нормального systemd); **WSL2** — реальное ядро в lightweight VM, systemd и сервисы ближе к «настоящему» Linux.
 
 <a id="server"></a>
 
@@ -86,7 +86,7 @@
 - **Snap** — изолированные пакеты от Canonical (автообновления, confinement). По умолчанию заметнее на **Desktop** (Firefox и др. в некоторых релизах); на **Server** часто не нужен, но отдельные snaps (например, `aws-cli`, `kubectl`) бывают удобны.
 - **Где что:** системные демоны и классический DevOps-стек — обычно **apt**; десктоп-приложения и **Ubuntu Core** — ориентир на **Snap**. Не смешивать без необходимости одну и ту же роль (например, два способа установки одного сервиса) на одном хосте.
 
-См. также: [RHEL / Alma / Rocky](#rhel).
+См. также: [RHEL / Alma / Rocky](#rhel), [Virtualization](#virtualization).
 
 <a id="rhel"></a>
 
@@ -185,6 +185,8 @@
 | **Доп. репо** | PPA | EPEL (+ RHSM только на RHEL) |
 | **Жизненный цикл** | LTS раз в 2 года, **5 лет** (+ до **10** с [Ubuntu Pro](#server)) | **~10 лет** на мажор (RHEL 8, 9, …) при подписке |
 | **Контейнеры** | Docker / containerd распространены | **Podman** в экосистеме Red Hat по умолчанию; Docker часто ставят отдельно |
+
+См. также: [Virtualization](#virtualization).
 
 <a id="bash-scripting"></a>
 
@@ -307,97 +309,111 @@ awk '[условие] {действие}' имя_файла
     - `awk '{sum += $1} END {print sum}' file.txt` — посчитать сумму всех чисел в первом столбце.
     - `awk 'END {print NR}' file.txt` — количество прочитанных записей (обычно как `wc -l`; может отличаться, если в файле нет завершающего перевода строки).
 
+<a id="virtualization"></a>
+
 # Virtualization (KVM, QEMU) + Vagrant
 
-**Когда что использовать:** **KVM/QEMU** — низкоуровневая база (гипервизор) для запуска виртуальных машин с нативной скоростью; **Vagrant** — инструмент автоматизации («Infrastructure as Code» для локальной разработки), который управляет этими виртуалками через конфигурационные файлы.
+**Когда что использовать:** [KVM/QEMU](#kvm-qemu) — аппаратно ускоренные локальные VM; [Vagrant](#vagrant) — декларативные одноразовые окружения для разработки и лаб (не замена Terraform для облака).
 
 <a id="kvm-qemu"></a>
 
 ## Виртуализация: KVM и QEMU
 
-В экосистеме Linux эти две технологии работают в связке, превращая хост-систему в полноценный гипервизор Type-1 (bare-metal производительность).
+На Linux **KVM** (модуль ядра) и **QEMU** (процесс в user-space) работают вместе: при включённых **Intel VT-x / AMD-V** производительность близка к нативной. Это не «чистый» гипервизор Type-1 вроде ESXi, а **гибрид** — KVM в ядре + QEMU с моделями устройств.
 
-* **KVM (Kernel-based Virtual Machine)** — модуль ядра Linux. Он дает прямой доступ к функциям аппаратной виртуализации процессора (Intel VT-x или AMD-V). KVM отвечает только за виртуализацию **CPU и памяти**, выполняя код гостевой ОС напрямую на физическом процессоре.
-* **QEMU (Quick Emulator)** — эмулятор, работающий в пространстве пользователя (user-space). Он отвечает за эмуляцию **всего остального железа**: дисков, сетевых карт, видеоадаптеров, USB-контроллеров и шин PCI.
+- **KVM** — доступ к аппаратной виртуализации CPU/RAM; гостевой код выполняется на физическом процессоре.
+- **QEMU** — модели дисков, сети, видео, USB, PCI. С KVM **не эмулирует CPU** (ускорение `kvm` / `-enable-kvm` в libvirt); без KVM — медленный программный fallback.
 
 ### Проверка поддержки виртуализации на хосте
 
-Перед настройкой всегда проверяется, включена ли аппаратная виртуализация в BIOS/UEFI:
+Перед настройкой: VT-x/AMD-V в BIOS/UEFI. Для **вложенной виртуализации** (KVM внутри VM, Docker с KVM) — отдельно включить nested virtualization в BIOS и у гипервизора; в [WSL](#wsl) — только WSL2 и доп. настройки.
 
 ```bash
-# Проверка флагов процессора (если вывод > 0, поддержка есть)
-egrep -c '(vmx|svm)' /proc/cpuinfo
+# Флаги CPU (вывод > 0 — есть vmx/svm)
+grep -Ec '(vmx|svm)' /proc/cpuinfo
 
-# Утилита проверки для Ubuntu (пакет cpu-checker)
+# Ubuntu/Debian (пакет cpu-checker)
 kvm-ok
 
+# Модуль KVM загружен?
+lsmod | grep kvm
+```
+
+На **RHEL/Alma** достаточно `grep`/`lsmod`; `kvm-ok` — утилита Ubuntu.
+
+### Установка стека (Ubuntu Server / Desktop)
+
+```bash
+sudo apt update
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+sudo usermod -aG libvirt $USER   # перелогиниться
+sudo systemctl enable --now libvirtd
 ```
 
 ### Управление через libvirt (команды virsh)
 
-**libvirt** — это API, демон (`libvirtd`) и набор инструментов для удобного управления виртуализацией (KVM, QEMU, Xen). Вместо длинных и сложных команд `qemu-system-x86_64 ...` используются абстракции libvirt.
+**libvirt** — API, демон `libvirtd`, обёртка над KVM/QEMU (и Xen). Вместо длинных `qemu-system-x86_64 ...` — домены, сети, тома.
 
-Основная CLI-утилита для управления — `virsh`:
+Основная CLI — `virsh`:
 
-* `virsh list --all` — показать список всех локальных VM и их статус (работает/выключена).
-* `virsh start <vm_name>` — запустить виртуальную машину.
-* `virsh shutdown <vm_name>` — отправить сигнал корректного выключения (ACPI) в гостевую ОС.
-* `virsh destroy <vm_name>` — жестко выключить VM («выдернуть шнур из розетки»).
-* `virsh undefine <vm_name>` — удалить конфигурацию VM (xml-файл), но сохранить файлы дисков.
-* `virsh domiflist <vm_name>` — посмотреть сетевые интерфейсы конкретной виртуалки.
-
----
+- `virsh list --all` — все VM и статус.
+- `virsh start <vm_name>` / `virsh shutdown <vm_name>` — старт / ACPI shutdown.
+- `virsh destroy <vm_name>` — жёсткое выключение.
+- `virsh undefine <vm_name>` — удалить XML домена (диски отдельно).
+- `virsh domiflist <vm_name>` — интерфейсы VM.
+- `virsh console <vm_name>` — serial/virtio console (выход: `Ctrl+]`.
+- `sudo virsh net-list --all` — сети libvirt; по умолчанию **virbr0** (NAT для гостей).
+- `virt-manager` — GUI (опционально).
 
 <a id="vagrant"></a>
 
 ## Vagrant
 
-Инструмент от HashiCorp для декларативного развертывания и настройки виртуальных окружений. Позволяет избежать проблемы «на моей машине все работало».
+Инструмент для **локальных** воспроизводимых VM (HashiCorp). Удобен для лаб и «на моей машине работало», не для прод-деплоя в EC2.
 
 ### Основные концепты
 
-* **Vagrantfile** — файл конфигурации на языке Ruby (но с простым синтаксисом), где описаны параметры VM: образ, сеть, провайдер, ресурсы и скрипты инициализации.
-* **Boxes (боксы)** — предзаписанные базовые образы ОС (минимальные шаблоны вроде Ubuntu Server или AlmaLinux). Скачиваются один раз и кэшируются локально.
-* **Providers (провайдеры)** — бэкенд, на котором запускаются машины. По умолчанию часто используется VirtualBox, но на Linux-системах для максимальной производительности стандартом является **libvirt** (через плагин `vagrant-libvirt`).
-* **Provisioners (секция настройки)** — инструменты автоматизации, которые отрабатывают *внутри* VM сразу после её создания (Shell-скрипты, роли Ansible, манифесты Chef/Puppet).
+- **Vagrantfile** — декларация VM (Ruby-DSL): box, сеть, провайдер, provision.
+- **Boxes** — шаблоны ОС (кэш локально). Образы для облака часто собирают **Packer** → box или AMI.
+- **Providers** — бэкенд: VirtualBox по умолчанию в туториалах; на Linux лучше **libvirt** (`vagrant-libvirt`).
+- **Provisioners** — shell/Ansible/Chef после первого `up`.
 
 ### Базовые команды CLI
 
-Все команды выполняются в директории, где лежит `Vagrantfile`:
+В каталоге с `Vagrantfile`:
 
-* `vagrant up` — создать и запустить виртуалку по конфигурации (при первом запуске скачает бокс и выполнит provision).
-* `vagrant ssh` — подключиться к запущенной машине по SSH без ввода пароля (ключи прокидываются автоматически).
-* `vagrant halt` — корректно остановить виртуалку (`shutdown`).
-* `vagrant reload` — перезагрузить машину (применяет изменения в `Vagrantfile`, например, новые проброшенные порты).
-* `vagrant destroy` — полностью удалить виртуалку со всеми данными и дисками (быстро очищает ресурсы).
-* `vagrant status` — текущее состояние машин, описанных в текущем файле конфигурации.
+- `vagrant up` — создать/запустить, provision при первом запуске.
+- `vagrant ssh` — SSH без пароля (встроенные ключи).
+- `vagrant halt` — корректный shutdown.
+- `vagrant reload` — перезагрузка; **не все** изменения `Vagrantfile` (box, провайдер, сеть) — нужны `vagrant destroy` + `vagrant up`.
+- `vagrant destroy` — удалить VM и диски.
+- `vagrant status` — состояние машин в проекте.
 
-### Пример минимального Vagrantfile (с провайдером libvirt и shell-provision)
+### Пример минимального Vagrantfile (libvirt + shell-provision)
+
+Требуется: `vagrant plugin install vagrant-libvirt`.
 
 ```ruby
 Vagrant.configure("2") do |config|
-  # Задаем базовый бокс (например, чистый Ubuntu 24.04)
   config.vm.box = "generic/ubuntu2404"
 
-  # Настройка сети: проброс порта с гостевой машины на хост
   config.vm.network "forwarded_port", guest: 80, host: 8080
+  # Для нескольких VM: private_network — изолированная сеть между гостями
 
-  # Настройки ресурсов внутри KVM/libvirt
   config.vm.provider :libvirt do |lv|
     lv.cpus = 2
-    lv.memory = 2048 # в мегабайтах
+    lv.memory = 2048
   end
 
-  # Автоматическая настройка (Provisioning) при первом старте
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
     sudo apt-get install -y nginx
   SHELL
 end
-
 ```
 
-### Важные нюансы при работе на Linux:
+### Важные нюансы на Linux
 
-1. **Экономия ресурсов:** На десктопном Linux (например, Ubuntu) лучше использовать плагин `vagrant-libvirt` (`vagrant plugin install vagrant-libvirt`). Это исключает необходимость держать тяжелый Oracle VirtualBox, так как виртуалки будут крутиться напрямую в родном KVM.
-2. **Отличие от облака:** Vagrant идеален для локальных экспериментов («поднять связку из 3-х машин с приватной сетью для теста балансировщика»). Для продакшена и деплоя в AWS EC2 используются другие инструменты (Terraform, Packer, cloud-init).
+1. **vagrant-libvirt** — VM на родном KVM без VirtualBox: `vagrant plugin install vagrant-libvirt`.
+2. **Локалка vs облако:** Vagrant — эксперименты (несколько VM, private network, балансировщик). Прод в AWS — **Terraform**, образы — **Packer**, bootstrap — **cloud-init** (см. [Cloud](#cloud), [Server](#server)).
+3. **Связка:** Packer строит box/AMI → Vagrant поднимает из box → Terraform масштабирует инфраструктуру в облаке.

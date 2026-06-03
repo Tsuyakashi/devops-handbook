@@ -29,7 +29,7 @@ Future sctructure:
 - [Foundation & OS](OS-and-Networks/linux-cheatsheet.md#foundation-os):
     - Linux: [Ubuntu](OS-and-Networks/linux-cheatsheet.md#ubuntu); [RHEL / AlmaLinux](OS-and-Networks/linux-cheatsheet.md#rhel) (vs old CentOS)
     - bash ([grep](OS-and-Networks/linux-cheatsheet.md#grep), [sed](OS-and-Networks/linux-cheatsheet.md#sed), [awk](OS-and-Networks/linux-cheatsheet.md#awk))
-    - virtulization (kvm, qemu) + vagrant
+    - [virtualization](OS-and-Networks/linux-cheatsheet.md#virtualization) (kvm, qemu) + vagrant
     - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
 
 - Networking & Web Servers:
