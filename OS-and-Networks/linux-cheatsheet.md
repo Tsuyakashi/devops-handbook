@@ -2,10 +2,12 @@
 
 # Foundation & OS:
 
-- Linux: [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [apt/Snap](#apt-snap)); RHEL/AlmaLinux (vs old CentOS)
+- Linux: [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [Flavors](#ubuntu-flavors), [apt/Snap](#apt-snap)); [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
 - bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
 - virtualization (kvm, qemu) + vagrant
 - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
+
+<a id="ubuntu"></a>
 
 # Ubuntu
 
@@ -50,6 +52,7 @@
 - **netplan** — declarative-конфиг сети в YAML (`/etc/netplan/*.yaml`). На Server обычно рендерит **systemd-networkd**; на Desktop часто **NetworkManager**. После правок: `sudo netplan try` (откат, если не подтвердить), затем `sudo netplan apply`.
 - **curtin** — установщик «под капотом» автоматических и облачных установок (Subiquity/autoinstall, образы для AWS/Azure/GCP, MAAS). Разметка дисков, монтирование, базовая настройка до первого boot; на уже работающей VM почти не используется.
 - **cloud-init** — первая настройка при старте (SSH-ключи, hostname, user-data, пакеты из метаданных). Есть в **серверных и облачных** образах (EC2, Azure, GCP), не только в отдельном SKU «Cloud».
+- **ufw** — типичный фаервол на Ubuntu Server (`sudo ufw allow 22/tcp`, `sudo ufw enable`, `sudo ufw status`). На RHEL/Alma — [firewalld](#firewall-rhel).
 
 <a id="cloud"></a>
 
@@ -81,69 +84,111 @@
 - **Snap** — изолированные пакеты от Canonical (автообновления, confinement). По умолчанию заметнее на **Desktop** (Firefox и др. в некоторых релизах); на **Server** часто не нужен, но отдельные snaps (например, `aws-cli`, `kubectl`) бывают удобны.
 - **Где что:** системные демоны и классический DevOps-стек — обычно **apt**; десктоп-приложения и **Ubuntu Core** — ориентир на **Snap**. Не смешивать без необходимости одну и ту же роль (например, два способа установки одного сервиса) на одном хосте.
 
-<a id="rhel>
+См. также: [RHEL / Alma / Rocky](#rhel).
+
+<a id="rhel"></a>
 
 # Red Hat Enterprise Linux
 
-Большое семейство дистрибутивов, исторически заточенных на работу в Enterprise-сегменте, то есть на коммерческих серверах с высокими требованиями к стабильности и сертификации безопасности. В отличие от Ubuntu, который отлично подходит как десктопная система (например, в качестве daily-driver на рабочих ноутбуках), RHEL и его производные — это почти всегда исключительно серверные, headless-инсталляции.
+Большое семейство дистрибутивов для Enterprise: стабильность, сертификации, долгий жизненный цикл. В отличие от [Ubuntu](#ubuntu), RHEL и типичные форки — почти всегда серверные headless-инсталляции.
 
-## Основные дистрибутивы семейства (Клоны и форки)
+<a id="rhel-subscription"></a>
 
-Поскольку сам RHEL платный (по подписке), в сообществе популярны его 100% бинарно-совместимые бесплатные аналоги:
+## Подписка: subscription-manager и RHSM
 
-- CentOS (Устарело): Раньше был главным бесплатным клоном RHEL. Сейчас превратился в CentOS Stream — upstream-версию (полигон для тестов перед релизом RHEL), поэтому для стабильного продакшена больше не используется.
+**RHEL** распространяется по **подписке** (Red Hat Subscription Management, **RHSM**). Плата не «за ISO», а за право обновлений, патчей безопасности, поддержки и доступа к официальным репозиториям на зарегистрированных системах.
 
-- AlmaLinux / Rocky Linux: Актуальные на данный момент дистрибутивы, которые пришли на замену классическому CentOS. Полностью совместимы с RHEL (bug-for-bug). Используются там, где нужна стабильность Red Hat, но без покупки лицензий.
+- `subscription-manager register` — привязка хоста к аккаунту Red Hat (часто через activation key в Ansible/Terraform/cloud-init).
+- `subscription-manager attach --auto` — подключить подходящий subscription pool.
+- `subscription-manager repos --list` / `--enable` — какие репозитории доступны (BaseOS, AppStream и др.).
+- **AlmaLinux / Rocky** — бесплатные **ABI-совместимые форки** без RHSM: обновления из своих зеркал, без `subscription-manager`.
 
-## Amazon Linux (Специфика AWS)
-Оптимизированный дистрибутив от Amazon для EC2-инстансов.
+<a id="rhel-clones"></a>
 
-- Версии: Amazon Linux 2 (AL2, уходит в легаси) и актуальный Amazon Linux 2023 (AL2023).
+## Основные дистрибутивы семейства (клоны и форки)
 
-- Особенности: Хоть он и причисляется к семейству RHEL (использует те же пакетные менеджеры rpm/dnf), AL2023 не является прямым клоном конкретной версии RHEL. Он собирается из разных версий Fedora и CentOS.
+- **CentOS (устарело для «клон RHEL»):** классический CentOS Linux снят; **CentOS Stream** — rolling upstream перед RHEL, не замена стабильного «бинарного клона» для консервативного прода.
+- **AlmaLinux / Rocky Linux:** актуальные замены классическому CentOS; цель — совместимость пакетов/поведения с RHEL без подписки Red Hat.
 
-- Применение: Идеален для развертывания инфраструктуры в AWS (например, через Terraform), так как из коробки содержит все нужные агенты (SSM, AWS CLI) и имеет предсказуемую интеграцию с IAM и Cloud-init.
+<a id="amazon-linux"></a>
+
+## Amazon Linux (специфика AWS)
+
+Оптимизированный дистрибутив Amazon для EC2.
+
+- **Версии:** Amazon Linux 2 (AL2, legacy) и **Amazon Linux 2023** (AL2023).
+- **Связь с RHEL:** rpm/dnf как в Red Hat-мире, но AL2023 **не** 1:1 клон конкретного RHEL N — линия ближе к Fedora/собственному стеку Amazon.
+- **Применение:** AMI в AWS, агенты SSM, cloud-init, предсказуемая интеграция с IAM; удобен для Terraform/ASG.
+
+<a id="dnf-rhel"></a>
 
 ## Пакетный менеджер: dnf (и yum)
 
-Формат пакетов: .rpm (вместо .deb в Ubuntu).
+Формат: **.rpm** (на Ubuntu — .deb через [apt](#apt-snap)).
 
-- Инструмент: dnf (наследник старого yum). Все команды аналогичны: dnf install, dnf update.
+- **Базовые команды:** `sudo dnf install nginx`, `sudo dnf update`, `sudo dnf remove пакет`.
+- **Поиск и «какой пакет даёт файл»:**
+  - `dnf search nginx` — поиск по имени/описанию в включённых репозиториях.
+  - `dnf provides /usr/sbin/nginx` — какой RPM установит данный путь (аналог `apt-file search` / `dpkg -S`).
+  - `rpm -qa | grep nginx` — список **уже установленных** пакетов (фильтр через grep).
+- **EPEL** — Extra Packages for Enterprise Linux: софт вне базовых репо RHEL. Подключить EPEL, затем `dnf install …`.
 
-- Специфика: Для установки дополнительного софта, которого нет в базовых репозиториях (например, сложных proxy-сервисов вроде Dante/Squid или нестандартного инструментария для контейнеризации), требуется подключать репозиторий EPEL (Extra Packages for Enterprise Linux). В Ubuntu этот софт обычно лежит в дефолтном apt.
+<a id="rhel-network"></a>
 
 ## Сеть: NetworkManager vs Netplan
-- В экосистеме RHEL стандартом де-факто для управления сетью является NetworkManager (конфиги исторически лежат в /etc/sysconfig/network-scripts/, но сейчас используется утилита nmcli или конфиги в /etc/NetworkManager/).
 
-- netplan, привычный по Ubuntu Server, здесь не используется.
+- **RHEL / Alma / Rocky:** дефолт — **NetworkManager** (`nmcli`, конфиги в `/etc/NetworkManager/`). Каталог `/etc/sysconfig/network-scripts/` на RHEL 8/9 — legacy, не опора для новых установок.
+- **Ubuntu Server:** [netplan](#server) → чаще systemd-networkd; **netplan на RHEL не используется**.
+
+<a id="firewall-rhel"></a>
+
+## Файрвол: firewalld vs ufw
+
+| | **Ubuntu Server** | **RHEL / Alma / Rocky** |
+|---|-------------------|-------------------------|
+| Демон/утилита | **ufw** (обёртка над iptables/nftables) | **firewalld** + `firewall-cmd` |
+| Примеры | `sudo ufw allow 22/tcp`, `sudo ufw enable` | `sudo firewall-cmd --permanent --add-service=http`, `sudo firewall-cmd --reload` |
+| Зоны | проще, меньше понятий | зоны (`public`, `internal`), сервисы в XML |
+
+На [Ubuntu Server](#server) чаще встречается **ufw**; в AWS-образах Ubuntu порты иногда открыты security group, а ufw выключен — проверять `ufw status`.
+
+<a id="selinux"></a>
 
 ## Безопасность: SELinux
 
-Пожалуй, главное отличие RHEL от Ubuntu в повседневном администрировании.
+Главное повседневное отличие от Ubuntu в проде.
 
-- В Ubuntu: Используется AppArmor (обычно менее строгий из коробки).
+- **Ubuntu:** **AppArmor** — профили для отдельных приложений; на Server обычно меньше «сюрпризов», чем enforcing SELinux на RHEL.
+- **RHEL:** **SELinux** (mandatory access control) в режиме **enforcing** по умолчанию.
 
-- В RHEL: Строго используется SELinux (Security-Enhanced Linux). Это система мандатного управления доступом.
+**Диагностика:**
 
-- Что нужно знать: Если сервис (например, кастомно настроенный Nginx, балансировщик, или rootless Docker) запускается, но выдает "Permission denied" при попытке прочитать файл или открыть порт, хотя права chmod/chown настроены верно — в 99% случаев это блокирует SELinux. Требуется работа с контекстами (semanage, restorecon) или булевыми переключателями (setsebool), а не просто отключение (перевод в permissive мод) ради костыля.
+- `getenforce` — `Enforcing` / `Permissive` / `Disabled` (временно мягче: `setenforce 0`, не замена настройке контекстов).
+- `ausearch -m avc -ts recent` или `/var/log/audit/audit.log` — кто и что заблокировал (нужен пакет `audit`).
+- Если `chmod`/`chown` верны, а Nginx не читает файлы в `/var/www/myapp` — часто неверный **тип контекста**:
+  - `sudo chcon -R -t httpd_sys_content_t /var/www/myapp`
+  - `sudo restorecon -Rv /var/www/myapp` — восстановить контексты по политике.
+- Долгосрочно: `semanage fcontext`, `setsebool`, а не постоянный permissive.
+
+<a id="rhel-vs-ubuntu"></a>
 
 ## RHEL vs Ubuntu
 
 | Фича / Компонент | Ubuntu Server | RHEL / AlmaLinux / Amazon Linux |
 | :--- | :--- | :--- |
-| **Пакеты** | .deb (apt) | .rpm (dnf / yum) |
-| **Сеть (дефолт)** | netplan (systemd-networkd) | NetworkManager (nmcli) |
-| **Безопасность** | AppArmor | SELinux |
-| **Доп. репозитории** | PPA (Персональные архивы) | EPEL |
-| **Жизненный цикл** | Строгие релизы раз в 2 года (LTS) | 10 лет поддержки мажорной версии (RHEL 8, 9) |
-| **Контейнеры (дефолт)** | Docker / containerd | Podman (интегрирован из коробки вместо Docker) |
-
+| **Пакеты** | .deb ([apt](#apt-snap)) | .rpm ([dnf](#dnf-rhel)) |
+| **Сеть** | [netplan](#server) | [NetworkManager](#rhel-network) |
+| **Файрвол** | [ufw](#server) | [firewalld](#firewall-rhel) |
+| **MAC** | AppArmor | [SELinux](#selinux) |
+| **Доп. репо** | PPA | EPEL (+ RHSM только на RHEL) |
+| **Жизненный цикл** | LTS раз в 2 года, **5 лет** (+ до **10** с [Ubuntu Pro](#server)) | **~10 лет** на мажор (RHEL 8, 9, …) при подписке |
+| **Контейнеры** | Docker / containerd распространены | **Podman** в экосистеме Red Hat по умолчанию; Docker часто ставят отдельно |
 
 <a id="bash-scripting"></a>
 
 # Bash scripting
 
-**Когда что использовать:** grep — найти строки по шаблону; sed — потоковое редактирование (замена, удаление, выбор строк); awk — столбцы, числа, агрегации по полям.
+**Когда что использовать:** [grep](#grep) — найти строки по шаблону; [sed](#sed) — потоковое редактирование (замена, удаление, выбор строк); [awk](#awk) — столбцы, числа, агрегации по полям.
 
 <a id="grep"></a>
 
@@ -259,5 +304,3 @@ awk '[условие] {действие}' имя_файла
     - `BEGIN` выполняется до чтения текста, `END` — после обработки всех строк.
     - `awk '{sum += $1} END {print sum}' file.txt` — посчитать сумму всех чисел в первом столбце.
     - `awk 'END {print NR}' file.txt` — количество прочитанных записей (обычно как `wc -l`; может отличаться, если в файле нет завершающего перевода строки).
-
-<a id="ubuntu"></a>
