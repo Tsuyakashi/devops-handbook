@@ -2,7 +2,9 @@
 
 # Foundation & OS:
 
-- Linux: [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [Flavors](#ubuntu-flavors), [apt/Snap](#apt-snap)); [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
+- Linux: 
+    - [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [Flavors](#ubuntu-flavors), [apt/Snap](#apt-snap)); 
+    - [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
 - bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
 - virtualization (kvm, qemu) + vagrant
 - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
