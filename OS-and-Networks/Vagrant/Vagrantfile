@@ -1,0 +1,14 @@
+ENV['VAGRANT_SERVER_URL'] = 'https://vagrant.elab.pro'
+
+Vagrant.configure("2") do |config|
+    config.vagrant.plugins = ["vagrant-libvirt"]
+    
+    config.vm.box = "bento/ubuntu-24.04"
+
+    config.vm.provider :libvirt do |lv|
+        lv.cpus = 1
+        lv.memory = 1024
+
+        lv.storage_pool_name = "images"
+    end
+end
