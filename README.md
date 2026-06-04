@@ -31,6 +31,8 @@ Future sctructure:
     - bash ([grep](OS-and-Foundation/linux-cheatsheet.md#grep), [sed](OS-and-Foundation/linux-cheatsheet.md#sed), [awk](OS-and-Foundation/linux-cheatsheet.md#awk))
     - [virtualization](OS-and-Foundation/linux-cheatsheet.md#virtualization) (kvm, qemu) + vagrant
     - [system management](OS-and-Foundation/linux-cheatsheet.md#system-management) (systemd, cron, sudo, journald, logrotate)
+        - [Process and resource management](OS-and-Foundation/linux-cheatsheet.md#processes-resources)
+        - [Disk subsystem and LVM](OS-and-Foundation/linux-cheatsheet.md#storage-lvm)
 
 - Networking & Web Servers:
     - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP

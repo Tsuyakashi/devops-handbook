@@ -7,7 +7,14 @@
     - [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
 - bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
 - virtualization ([обзор](#virtualization)): [KVM/QEMU](#kvm-qemu), [Vagrant](#vagrant)
-- [System management](#system-management): [права](#permissions), [systemd](#systemd), [journald](#journald), [cron](#cron), [logrotate](#logrotate)
+- [System management](#system-management): 
+  - [права](#permissions), 
+  - [systemd](#systemd), 
+  - [journald](#journald), 
+  - [cron](#cron), 
+  - [logrotate](#logrotate)
+  - [Управление процессами и ресурсами](#processes-resources)
+  - [Дисковая подсистема и LVM](#storage-lvm)
 
 <a id="ubuntu"></a>
 
@@ -539,3 +546,46 @@ end
 - **copytruncate** — отдельная опция, если демон не умеет reopen (вместо `postrotate`, не вместе с ним).
 
 **Проверка:** `sudo logrotate -d /etc/logrotate.d/myapp` (dry-run); `sudo logrotate -f …` — принудительно.
+
+<a id="processes-resources"></a>
+
+## Управление процессами и ресурсами
+
+### Мониторинг памяти и CPU
+- `free -m` (или `-h`) — смотрим оперативную память и Swap. Важно: колонка `available` — сколько реально есть для запуска новых задач (а не `free`, которая часто забита кэшем).
+- `uptime` — смотрим **Load Average (LA)**. Три числа: за 1, 5 и 15 минут. 
+    - *Суть:* если LA равен количеству ядер CPU — система загружена на 100%. Если выше — процессы стоят в очереди (CPU bound или I/O bound).
+- `top` / `htop` — интерактивный просмотр процессов. В `top` обращать внимание на `%wa` (IO wait) — если он высокий, значит, тормозит диск, а не процессор.
+
+### Сигналы процессам (kill)
+- `ps aux | grep myapp` — найти PID процесса.
+- `kill -15 <PID>` (**SIGTERM**) — мягкая просьба завершиться. Процесс успеет закрыть соединения и сохранить данные. (Используется systemd по умолчанию).
+- `kill -9 <PID>` (**SIGKILL**) — жесткое убийство ядра. Процесс уничтожается мгновенно, возможна порча данных. Использовать, только если процесс «повис» намертво.
+
+### OOM Killer (Out of Memory)
+Когда в системе кончается оперативная память (и Swap), активируется механизм ядра — **OOM Killer**. Он выбирает самый «плохой» процесс (который ест много памяти и не является системным) и безжалостно убивает его по `SIGKILL`.
+- *Где искать трупы приложений:* `dmesg -T | grep -i oom` или в `/var/log/syslog` (`messages`). Если твой Docker-контейнер или Java-аппка молча исчезли — это почти всегда OOM.
+
+<a id="storage-lvm"></a>
+
+## Дисковая подсистема и LVM
+
+### Базовая диагностика
+- `df -h` — сколько места свободно на смонтированных дисках.
+- `df -i` — проверка **inodes** (индексных дескрипторов). Каждому файлу нужна 1 inode. Если ты создашь миллион пустых файлов по 1 байту, место на диске останется (`df -h` покажет 90% свободно), но новые файлы создать нельзя, потому что кончатся inodes (`df -i` покажет 100%).
+- `du -sh /var/log/*` — узнать, какая именно папка сожрала место (сортировка: `du -sh * | sort -h`).
+
+### Концепт LVM (Logical Volume Manager)
+В проде диски почти никогда не монтируют «напрямую». Используют LVM — абстракцию, позволяющую объединять разные диски в один и менять их размер без форматирования.
+
+Иерархия:
+1. **PV (Physical Volume)** — физический диск или раздел (например, `/dev/sdb`).
+2. **VG (Volume Group)** — «пул» из нескольких PV. Объединяет их пространство.
+3. **LV (Logical Volume)** — «виртуальный» раздел, который режется из VG. На него уже накатывается файловая система (ext4, xfs) и он монтируется в ОС (например, в `/var/lib/docker`).
+
+*Типичный кейс расширения диска в облаке (без перезагрузки):*
+1. Увеличили диск в панели AWS.
+2. Сказали ОС перечитать размер: `echo 1 > /sys/class/block/sdb/device/rescan`.
+3. Расширили PV: `pvresize /dev/sdb`.
+4. Расширили LV: `lvextend -l +100%FREE /dev/vg_root/lv_data`.
+5. Расширили саму файловую систему: `resize2fs /dev/vg_root/lv_data` (для ext4) или `xfs_growfs /` (для xfs).
