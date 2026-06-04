@@ -118,7 +118,7 @@ vagrant box add локальное_имя noble.box
 ## Быстрый старт (после установки зависимостей)
 
 ```bash
-cd OS-and-Networks/Vagrant
+cd OS-and-Foundation/Vagrant
 vagrant up
 vagrant ssh
 ```

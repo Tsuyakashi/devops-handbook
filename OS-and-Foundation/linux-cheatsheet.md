@@ -7,7 +7,7 @@
     - [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
 - bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
 - virtualization ([обзор](#virtualization)): [KVM/QEMU](#kvm-qemu), [Vagrant](#vagrant)
-- system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
+- [System management](#system-management): [права](#permissions), [systemd](#systemd), [journald](#journald), [cron](#cron), [logrotate](#logrotate)
 
 <a id="ubuntu"></a>
 
@@ -417,3 +417,125 @@ end
 1. **vagrant-libvirt** — VM на родном KVM без VirtualBox: `vagrant plugin install vagrant-libvirt`.
 2. **Локалка vs облако:** Vagrant — эксперименты (несколько VM, private network, балансировщик). Прод в AWS — **Terraform**, образы — **Packer**, bootstrap — **cloud-init** (см. [Cloud](#cloud), [Server](#server)).
 3. **Связка:** Packer строит box/AMI → Vagrant поднимает из box → Terraform масштабирует инфраструктуру в облаке.
+
+См. также: [System management](#system-management).
+
+<a id="system-management"></a>
+
+# System Management
+
+Управление доступом, службами, планировщиком и логами — база администрирования и траблшутинга на [Ubuntu](#ubuntu) и [RHEL](#rhel).
+
+<a id="permissions"></a>
+
+## Управление правами: sudo, chmod, chown
+
+Права: **u**ser, **g**roup, **o**thers × **r**ead (4), **w**rite (2), e**x**ecute (1). На RHEL после `chown` для веб-каталогов иногда нужен ещё [SELinux](#selinux) (`restorecon`), даже при верных `chmod`.
+
+### sudo и visudo
+
+- **sudo** — выполнить команду от root.
+- **/etc/sudoers** — только **`sudo visudo`**, не править файл напрямую.
+- **/etc/sudoers.d/** — drop-in (Ansible). Пример: `deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart myapp`
+
+### chmod
+
+- `chmod +x script.sh` / `chmod u+x script.sh` — исполнение.
+- `chmod 755 dir` — каталог; `chmod 644 file` — конфиг.
+- `chmod -R` — рекурсивно; осторожно с лишним `+x` на файлах.
+
+### chown
+
+- `chown nginx:nginx /var/www/html` — владелец и группа.
+- `chown -R app:app /opt/app` — рекурсивно.
+
+<a id="systemd"></a>
+
+## Управление службами: systemd
+
+**systemd** — PID 1: службы, mount, target, сокеты, таймеры. Юниты — `.service`, `.timer`, `.mount` и др.
+
+- **/etc/systemd/system/** — кастомные unit и override (`systemctl edit`).
+- **/usr/lib/systemd/system/** (раньше **/lib/systemd/system/**) — юниты из пакетов; не править вручную.
+
+### systemctl
+
+- `systemctl status nginx` — статус + хвост лога.
+- `systemctl start` / `stop` / `restart nginx` — управление процессом.
+- `systemctl reload nginx` — перечитать конфиг без полного рестарта (если unit поддерживает).
+- `systemctl enable` / `disable nginx` — автозапуск при boot.
+- `systemctl is-active nginx` / `is-enabled nginx` — для скриптов и проверок.
+- `systemctl list-units --failed` — упавшие юниты после boot.
+- `systemctl daemon-reload` — **обязательно** после изменения unit-файлов на диске.
+
+<a id="journald"></a>
+
+## Логирование: systemd-journald
+
+**journald** — бинарный журнал ядра, systemd и сервисов. Лимиты диска: `/etc/systemd/journald.conf` (`SystemMaxUse`, `MaxRetentionSec`).
+
+- `journalctl -u nginx` — логи unit.
+- `journalctl -f` — follow (как `tail -f`).
+- `journalctl -b` — текущая загрузка; `-b -1` — предыдущая.
+- `journalctl -e` / `-xe` — конец лога / расширенный вывод при падении сервиса.
+- `journalctl -p err..emerg` — только ошибки и выше.
+- `journalctl --since "1 hour ago"` — окно по времени.
+- `journalctl --disk-usage` / `--vacuum-time=7d` — место на диске и очистка.
+
+Текстовые файлы в `/var/log/*.log` — отдельно через [logrotate](#logrotate).
+
+<a id="cron"></a>
+
+## Планировщик: cron и systemd timers
+
+### cron
+
+- `crontab -e` / `crontab -l` — таблица текущего пользователя.
+- `sudo crontab -u deploy -e` — crontab другого пользователя.
+- **/etc/crontab** — системные задачи (с полем пользователя).
+- **/etc/cron.d/** — drop-in от пакетов.
+- Указывать **полные пути**; при необходимости `PATH=` в crontab.
+
+```text
+# мин  час  день_мес  месяц  день_нед (0 и 7 = воскресенье)
+0 3 * * * /opt/scripts/backup.sh
+```
+
+### Cron vs systemd timers
+
+| | **cron** | **systemd timer** |
+|---|----------|-------------------|
+| Конфиг | crontab, `/etc/cron.d/` | `.timer` + `.service` |
+| Логи | почта root / файл | [journald](#journald) |
+| Плюсы | просто | `OnCalendar`, `Persistent=`, `systemctl list-timers` |
+
+<a id="logrotate"></a>
+
+## Ротация логов: logrotate
+
+Ротация файлов в `/var/log/` (не путать с бинарным **journald**). Запуск по cron или systemd timer.
+
+- **/etc/logrotate.conf** — глобальные правила.
+- **/etc/logrotate.d/** — per-service (nginx, apt, syslog).
+
+**Пример `/etc/logrotate.d/myapp`:**
+
+```text
+/var/log/myapp/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 app app
+    postrotate
+        systemctl reload myapp >/dev/null 2>&1 || true
+    endscript
+}
+```
+
+- **postrotate / endscript** — reload/HUP, чтобы демон переоткрыл лог.
+- **copytruncate** — отдельная опция, если демон не умеет reopen (вместо `postrotate`, не вместе с ним).
+
+**Проверка:** `sudo logrotate -d /etc/logrotate.d/myapp` (dry-run); `sudo logrotate -f …` — принудительно.

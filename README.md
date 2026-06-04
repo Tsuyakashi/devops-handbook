@@ -5,10 +5,10 @@ Collection of cheesheets
 Future sctructure:
 ```
 .
-├── OS-and-Networks/
+├── OS-and-Foundation/
 │   ├── linux-cheatsheet.md
 │   ├── scripts/               # Ваши bash-скрипты автоматизации
-│   └── vagrant-kvm-lab/       # Vagrantfile для быстрого поднятия тестовых ВМ
+│   └── Vagrant/               # Vagrantfile для быстрого поднятия тестовых ВМ
 ├── IaC-and-Ansible/
 │   ├── ansible/               # Рабочие playbooks и roles
 │   └── terraform/             # .tf файлы для поднятия тестовой инфраструктуры
@@ -26,11 +26,11 @@ Future sctructure:
 ```
 
 ## Base focus
-- [Foundation & OS](OS-and-Networks/linux-cheatsheet.md#foundation-os):
-    - Linux: [Ubuntu](OS-and-Networks/linux-cheatsheet.md#ubuntu); [RHEL / AlmaLinux](OS-and-Networks/linux-cheatsheet.md#rhel) (vs old CentOS)
-    - bash ([grep](OS-and-Networks/linux-cheatsheet.md#grep), [sed](OS-and-Networks/linux-cheatsheet.md#sed), [awk](OS-and-Networks/linux-cheatsheet.md#awk))
-    - [virtualization](OS-and-Networks/linux-cheatsheet.md#virtualization) (kvm, qemu) + vagrant
-    - system management: systemd - services, cron, sudo/chmod/chown, systemd-journald, logrotate
+- [Foundation & OS](OS-and-Foundation/linux-cheatsheet.md#foundation-os):
+    - Linux: [Ubuntu](OS-and-Foundation/linux-cheatsheet.md#ubuntu); [RHEL / AlmaLinux](OS-and-Foundation/linux-cheatsheet.md#rhel) (vs old CentOS)
+    - bash ([grep](OS-and-Foundation/linux-cheatsheet.md#grep), [sed](OS-and-Foundation/linux-cheatsheet.md#sed), [awk](OS-and-Foundation/linux-cheatsheet.md#awk))
+    - [virtualization](OS-and-Foundation/linux-cheatsheet.md#virtualization) (kvm, qemu) + vagrant
+    - [system management](OS-and-Foundation/linux-cheatsheet.md#system-management) (systemd, cron, sudo, journald, logrotate)
 
 - Networking & Web Servers:
     - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP
