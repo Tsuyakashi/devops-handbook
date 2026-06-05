@@ -1,38 +1,25 @@
 # DEVOPS TRAINEE
 
-Collection of cheesheets
+Collection of cheatsheets
 
-Future sctructure:
-```
-.
-├── OS-and-Foundation/
-│   ├── linux-cheatsheet.md
-│   ├── scripts/               # Ваши bash-скрипты автоматизации
-│   └── Vagrant/               # Vagrantfile для быстрого поднятия тестовых ВМ
-├── IaC-and-Ansible/
-│   ├── ansible/               # Рабочие playbooks и roles
-│   └── terraform/             # .tf файлы для поднятия тестовой инфраструктуры
-├── Containers-and-K8s/
-│   ├── docker-apps/           # Папки с Dockerfile для ваших мини-аппок
-│   └── k8s-manifests/         # Голые манифесты и ваши Helm-чарты
-├── CI-CD-GitOps/
-│   ├── .gitlab-ci.yml         # Примеры пайплайнов
-│   └── argocd-apps/           # Манифесты приложений для ArgoCD
-├── Python-and-MLOps/
-│   ├── app/                   # Ваше FastAPI мини-приложение (с boto3)
-│   ├── Dockerfile.ml          # Dockerfile с CUDA
-│   └── scripts/               # Скрипты автоматизации на Python
-└── README.md                  # Ваш корневой план (тот, что вы написали выше)
-```
+## Planned topics
 
-## Base focus
-- [Foundation & OS](OS-and-Foundation/linux-cheatsheet.md#foundation-os):
-    - Linux: [Ubuntu](OS-and-Foundation/linux-cheatsheet.md#ubuntu); [RHEL / AlmaLinux](OS-and-Foundation/linux-cheatsheet.md#rhel) (vs old CentOS)
-    - bash ([grep](OS-and-Foundation/linux-cheatsheet.md#grep), [sed](OS-and-Foundation/linux-cheatsheet.md#sed), [awk](OS-and-Foundation/linux-cheatsheet.md#awk))
-    - [virtualization](OS-and-Foundation/linux-cheatsheet.md#virtualization) (kvm, qemu) + vagrant
-    - [system management](OS-and-Foundation/linux-cheatsheet.md#system-management) (systemd, cron, sudo, journald, logrotate)
-        - [Process and resource management](OS-and-Foundation/linux-cheatsheet.md#processes-resources)
-        - [Disk subsystem and LVM](OS-and-Foundation/linux-cheatsheet.md#storage-lvm)
+- [Foundation & OS](OS-and-Foundation/README.md) — Linux (Ubuntu, RHEL/AlmaLinux), bash, virtualization, systemd, processes, LVM
+- [Networking & Web Servers](Networking-and-Web-Servers/README.md#osi) — [OSI/TCP/IP](Networking-and-Web-Servers/README.md#osi), [DNS](Networking-and-Web-Servers/README.md#dns), [DHCP](Networking-and-Web-Servers/README.md#dhcp), HTTP, Nginx/Apache, [troubleshooting](Networking-and-Web-Servers/README.md#troubleshooting)
+- [IaC & Ansible](IaC-and-Ansible/) — Ansible playbooks/roles, Terraform/OpenTofu
+- [Containers & K8s](Containers-and-K8s/) — Docker, Kubernetes, Helm, Ingress, PV/CRD
+- [CI/CD & GitOps](CI-CD-GitOps/) — GitLab CI, Jenkins, ArgoCD, deployment strategies
+- [Python & MLOps](Python-and-MLOps/) — FastAPI, Docker for ML, CUDA/GPU, vLLM
+- [Monitoring & Observability](Monitoring-and-Observability/) — Prometheus/Grafana, Loki, SRE basics
+- [Databases](Databases/) — MySQL/PostgreSQL, MongoDB, Redis, Kafka, Keycloak
+- [AI-Assisted Engineering](AI-Assisted-Engineering/) — CLI agents, LLM API routing, prompt caching, prompt engineering for IaC
+- [Foundation & OS](OS-and-Foundation/README.md#foundation-os):
+    - Linux: [Ubuntu](OS-and-Foundation/README.md#ubuntu); [RHEL / AlmaLinux](OS-and-Foundation/README.md#rhel) (vs old CentOS)
+    - bash ([grep](OS-and-Foundation/README.md#grep), [sed](OS-and-Foundation/README.md#sed), [awk](OS-and-Foundation/README.md#awk))
+    - [virtualization](OS-and-Foundation/README.md#virtualization) (kvm, qemu) + vagrant
+    - [system management](OS-and-Foundation/README.md#system-management) (systemd, cron, sudo, journald, logrotate)
+        - [Process and resource management](OS-and-Foundation/README.md#processes-resources)
+        - [Disk subsystem and LVM](OS-and-Foundation/README.md#storage-lvm)
 
 - Networking & Web Servers:
     - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP
@@ -82,3 +69,9 @@ Future sctructure:
     - MLOps Core: FastAPI (base endpoints for models)
     - Docker for ML: packing python-apps, CUDA, GPU in Container 
     - vLLM, distribution GPU in k8s 
+
+- AI-Assisted Engineering (AI-Native DevOps)
+    - **CLI Agents:** Claude Code, Cline, Copilot CLI (архитектура, ограничения, вызовы локальных инструментов)
+    - **LLM API & Routing:** Интеграция с агрегаторами (OpenRouter), управление API-ключами, балансировка стоимости запросов
+    - **Prompt Caching:** Механизмы кэширования контекста на стороне провайдеров, оптимизация структуры папок для уменьшения Input-токенов (`.claudeignore`)
+    - **Prompt Engineering для IaC:** Создание системных промптов (System Prompts) для точной генерации манифестов Kubernetes без галлюцинаций, идемпотентных плейбуков Ansible и валидного HCL-кода для Terraform
