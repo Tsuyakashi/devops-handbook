@@ -1,14 +1,13 @@
 # Сети и веб-серверы (Networking & Web Servers):
 
 ### Contents
-- Protocols: OSI model (L1-L7), TCP/IP, UDP, [DNS](Networking-and-Web-Servers/README.md#dns) (A, CNAME, MX, TXT records), [DHCP](Networking-and-Web-Servers/README.md#dhcp)
-- Routing & Security: NAT, Bridge, SSH, TLS/SSL handshake, VPN (WireGuard/OpenVPN)
-- Web: [HTTP/HTTPS](Networking-and-Web-Servers/README.md#http) (response codes, headers)
-- Web Servers: [Nginx](Networking-and-Web-Servers/README.md#web-servers) (Reverse Proxy, Balancer), Apache
-- basic network [troubleshooting](Networking-and-Web-Servers/README.md#troubleshooting): ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
-
-   - LAMP/LNMP-stack (outdated with containers)
-
+- **[Протоколы и модели](#osi)**: OSI model (L1-L7), TCP/IP, TCP (рукопожатие, состояния), UDP
+- **[Сетевая инфраструктура](#network-infra)**: NAT (SNAT/DNAT), Bridge, DHCP (алгоритм DORA)
+- **[Безопасность и шифрование](#security-vpn)**: SSH (Best Practices), TLS/SSL handshake, VPN (WireGuard/OpenVPN)
+- **[Протокол HTTP/HTTPS](#http-web)**: Метод-Request/Response, Коды ответов (2xx-5xx), Заголовки (`Host`, `X-Forwarded-*`)
+- **[Веб-серверы](#web-servers)**: Nginx (Reverse Proxy, Алгоритмы балансировки), Apache vs Nginx
+- **[Базовый Troubleshooting-бокс](#troubleshooting)**: Практический дебаг на интервью и в проде (`ping`, `curl`, `traceroute`, `tcpdump`, `ss`, `nc`, `dig`)
+  - *~~LAMP/LNMP-stack~~ (устарело с приходом контейнеризации)*
 
 <a id="osi"></a>
 
