@@ -11,13 +11,13 @@ Collection of cheatsheets
     - **[Disk subsystem and LVM](OS-and-Foundation/README.md#storage-lvm)**
 
 - **[Networking & Web Servers](Networking-and-Web-Servers/README.md)**:
-    - **Protocols**: [OSI model & TCP/IP](Networking-and-Web-Servers/README.md#osi) (L1-L7, инкапсуляция), TCP vs UDP (состояния сокетов, флаги)
+    - **Protocols**: [OSI model & TCP/IP](Networking-and-Web-Servers/README.md#osi) (L1-L7, encapsulation), TCP vs UDP (connection states, flags)
     - **Network Infra**: [Routing & Infrastructure](Networking-and-Web-Servers/README.md#network-infra) (NAT, Bridge, DHCP DORA)
     - **Security & Encryption**: [Security & VPN](Networking-and-Web-Servers/README.md#security-vpn) (SSH Best Practices, TLS/SSL handshake, WireGuard vs OpenVPN)
-    - **Web**: [HTTP/HTTPS](Networking-and-Web-Servers/README.md#http-web) (структура обмена, коды ответов 2xx-5xx, критичные заголовки)
-    - **Web Servers**: [Nginx & Apache](Networking-and-Web-Servers/README.md#web-servers) (архитектурные различия, Reverse Proxy, алгоритмы балансировки)
-    - **Troubleshooting**: [Практический дебаг-бокс](Networking-and-Web-Servers/README.md#troubleshooting) (команды для интервью и прода: `ping`, `curl`, `traceroute`, `tcpdump`, `ss`, `nc`, `dig`)
-
+    - **Web**: [HTTP/HTTPS](Networking-and-Web-Servers/README.md#http-web) (request/response structure, 2xx-5xx status codes, critical headers)
+    - **Web Servers**: [Nginx & Apache](Networking-and-Web-Servers/README.md#web-servers) (architectural differences, Reverse Proxy, load balancing algorithms)
+    - **Troubleshooting**: [Practical Troubleshooting Box](Networking-and-Web-Servers/README.md#troubleshooting) (CLI tools for interviews and production: `ping`, `curl`, `traceroute`, `tcpdump`, `ss`, `nc`, `dig`)
+    
 - **Version Control, CI/CD, GitOps**
     - **Git**: Git Flow, Branching, Merge, Rebase, cherry-pick, conflict resolution
     - **CI/CD Platforms**: GitLab CI / Jenkins - Jenkins Shared Libraries & Declarative Pipline
