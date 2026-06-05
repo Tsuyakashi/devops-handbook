@@ -1,10 +1,11 @@
 # Сети и веб-серверы (Networking & Web Servers):
 
-   - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP
-   - Routing & Security: NAT, Bridge, SSH, TLS/SSL handshake, VPN (WireGuard/OpenVPN)
-   - Web: HTTP/HTTPS (response codes, headers)
-   - Web Servers: Nginx (Reverse Proxy, Balancer), Apache
-   - basic network troubleshooting: ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
+### Contents
+- Protocols: OSI model (L1-L7), TCP/IP, UDP, [DNS](Networking-and-Web-Servers/README.md#dns) (A, CNAME, MX, TXT records), [DHCP](Networking-and-Web-Servers/README.md#dhcp)
+- Routing & Security: NAT, Bridge, SSH, TLS/SSL handshake, VPN (WireGuard/OpenVPN)
+- Web: [HTTP/HTTPS](Networking-and-Web-Servers/README.md#http) (response codes, headers)
+- Web Servers: [Nginx](Networking-and-Web-Servers/README.md#web-servers) (Reverse Proxy, Balancer), Apache
+- basic network [troubleshooting](Networking-and-Web-Servers/README.md#troubleshooting): ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
 
    - LAMP/LNMP-stack (outdated with containers)
 
@@ -54,6 +55,31 @@
 * `ESTABLISHED` — Соединение успешно установлено, идет обмен данными.
 * `TIME_WAIT` — Соединение закрыто со стороны клиента, но ОС держит сокет открытым еще некоторое время, чтобы поймать «запоздавшие» пакеты. *Важно:* Если на сервере слишком много `TIME_WAIT`, могут кончиться свободные локальные порты.
 * `CLOSE_WAIT` — Удаленная сторона закрыла соединение, а наше приложение еще не закрыло сокет со своей стороны (потенциальная утечка дескрипторов в коде).
+
+---
+
+<a name="web-servers"></a>
+## Web Servers: Nginx и Apache
+
+* **Nginx:**
+  * Reverse Proxy (обратный прокси) — балансировка нагрузки, SSL-терминация, кеширование
+  * Асинхронная архитектура (event-driven), обрабатывает 10k+ соединений в отличие от Apache
+* **Apache:**
+  * Много поточная архитектура (mpm_prefork/worker/event)
+  * .htaccess для динамической конфигурации (удобно для shared hosting)
+
+<a name="http"></a>
+## HTTP/HTTPS
+
+* **Коды ответов:**
+  * 2xx (Success): 200 OK, 201 Created, 204 No Content
+  * 3xx (Redirect): 301 Permanent, 302 Temporary, 307/308 (сохранение метода)
+  * 4xx (Client): 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 429 Too Many Requests
+  * 5xx (Server): 500 Internal Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout
+
+* **Заголовки:**
+  * `Host` — виртуальный хост (virtual host) в Nginx/Apache
+  * `X-Forwarded-*` — передача реального IP при работе через proxy
 
 ---
 

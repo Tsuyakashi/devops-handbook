@@ -2,17 +2,6 @@
 
 Collection of cheatsheets
 
-## Planned topics
-
-- [Foundation & OS](OS-and-Foundation/README.md) — Linux (Ubuntu, RHEL/AlmaLinux), bash, virtualization, systemd, processes, LVM
-- [Networking & Web Servers](Networking-and-Web-Servers/README.md#osi) — [OSI/TCP/IP](Networking-and-Web-Servers/README.md#osi), [DNS](Networking-and-Web-Servers/README.md#dns), [DHCP](Networking-and-Web-Servers/README.md#dhcp), HTTP, Nginx/Apache, [troubleshooting](Networking-and-Web-Servers/README.md#troubleshooting)
-- [IaC & Ansible](IaC-and-Ansible/) — Ansible playbooks/roles, Terraform/OpenTofu
-- [Containers & K8s](Containers-and-K8s/) — Docker, Kubernetes, Helm, Ingress, PV/CRD
-- [CI/CD & GitOps](CI-CD-GitOps/) — GitLab CI, Jenkins, ArgoCD, deployment strategies
-- [Python & MLOps](Python-and-MLOps/) — FastAPI, Docker for ML, CUDA/GPU, vLLM
-- [Monitoring & Observability](Monitoring-and-Observability/) — Prometheus/Grafana, Loki, SRE basics
-- [Databases](Databases/) — MySQL/PostgreSQL, MongoDB, Redis, Kafka, Keycloak
-- [AI-Assisted Engineering](AI-Assisted-Engineering/) — CLI agents, LLM API routing, prompt caching, prompt engineering for IaC
 - [Foundation & OS](OS-and-Foundation/README.md#foundation-os):
     - Linux: [Ubuntu](OS-and-Foundation/README.md#ubuntu); [RHEL / AlmaLinux](OS-and-Foundation/README.md#rhel) (vs old CentOS)
     - bash ([grep](OS-and-Foundation/README.md#grep), [sed](OS-and-Foundation/README.md#sed), [awk](OS-and-Foundation/README.md#awk))
@@ -22,13 +11,11 @@ Collection of cheatsheets
         - [Disk subsystem and LVM](OS-and-Foundation/README.md#storage-lvm)
 
 - Networking & Web Servers:
-    - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP
+    - Protocols: [OSI model (L1-L7)](Networking-and-Web-Servers/README.md#osi), TCP/IP, UDP, [DNS](Networking-and-Web-Servers/README.md#dns) (A, CNAME, MX, TXT records), [DHCP](Networking-and-Web-Servers/README.md#dhcp)
     - Routing & Security: NAT, Bridge, SSH, TLS/SSL handshake, VPN (WireGuard/OpenVPN)
-    - Web: HTTP/HTTPS (response codes, headers)
-    - Web Servers: Nginx (Reverse Proxy, Balancer), Apache
-    - basic network troubleshooting: ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
-
-    - LAMP/LNMP-stack (outdated with containers)
+    - Web: [HTTP/HTTPS](Networking-and-Web-Servers/README.md#http) (response codes, headers)
+    - Web Servers: [Nginx](Networking-and-Web-Servers/README.md#web-servers) (Reverse Proxy, Balancer), Apache
+    - basic network [troubleshooting](Networking-and-Web-Servers/README.md#troubleshooting): ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
 
 - Version Control, CI/CD, GitOps
     - Git: Git Flow, Branching, Merge, Rebase, cherry-pick, conflict resolution
