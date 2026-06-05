@@ -17,7 +17,13 @@ Collection of cheatsheets
     - **Web**: [HTTP/HTTPS](Networking-and-Web-Servers/README.md#http-web) (request/response structure, 2xx-5xx status codes, critical headers)
     - **Web Servers**: [Nginx & Apache](Networking-and-Web-Servers/README.md#web-servers) (architectural differences, Reverse Proxy, load balancing algorithms)
     - **Troubleshooting**: [Practical Troubleshooting Box](Networking-and-Web-Servers/README.md#troubleshooting) (CLI tools for interviews and production: `ping`, `curl`, `traceroute`, `tcpdump`, `ss`, `nc`, `dig`)
-    
+
+- **[Cloud Providers (AWS, Azure, GCP)](#cloud-providers)**:
+    - **AWS (Core Experience)**: VPC (Subnets, IGW, NAT Gateway, Security Groups), EC2, IAM (Roles, Policies, Instance Profiles), S3 (Storage Classes, Policies), EKS (Elastic Kubernetes Service), RDS, CloudWatch.
+    - **Google Cloud Platform (GCP)**: VPC Network, Compute Engine, GKE (Google Kubernetes Engine), Cloud Storage, IAM & Service Accounts.
+    - **Microsoft Azure**: Virtual Networks (VNet), Virtual Machines, AKS (Azure Kubernetes Service), Blob Storage, Azure AD / Entra ID.
+    - **Cloud Concepts**: Multi-cloud strategies, Cost Optimization (FinOps), Shared Responsibility Model.
+
 - **Version Control, CI/CD, GitOps**
     - **Git**: Git Flow, Branching, Merge, Rebase, cherry-pick, conflict resolution
     - **CI/CD Platforms**: GitLab CI / Jenkins - Jenkins Shared Libraries & Declarative Pipline
