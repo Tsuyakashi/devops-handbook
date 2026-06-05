@@ -1,11 +1,12 @@
 # Сети и веб-серверы (Networking & Web Servers):
-    - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP
-    - Routing & Security: NAT, Bridge, SSH, TLS/SSL handshake, VPN (WireGuard/OpenVPN)
-    - Web: HTTP/HTTPS (response codes, headers)
-    - Web Servers: Nginx (Reverse Proxy, Balancer), Apache
-    - basic network troubleshooting: ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
 
-    - LAMP/LNMP-stack (outdated with containers)
+   - Protocols: OSI model (L1-L7), TCP/IP, UDP, DNS (A, CNAME, MX, TXT records), DHCP
+   - Routing & Security: NAT, Bridge, SSH, TLS/SSL handshake, VPN (WireGuard/OpenVPN)
+   - Web: HTTP/HTTPS (response codes, headers)
+   - Web Servers: Nginx (Reverse Proxy, Balancer), Apache
+   - basic network troubleshooting: ping, curl, traceroute, tcpdump, netstat/ss, nslookup, dig (for interview)
+
+   - LAMP/LNMP-stack (outdated with containers)
 
 
 ## Модели OSI и TCP/IP
