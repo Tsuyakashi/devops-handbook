@@ -1,4 +1,4 @@
-# DEVOPS TRAINEE
+# DEVOPS HANDBOOK
 
 Collection of cheatsheets
 
@@ -30,8 +30,6 @@ Collection of cheatsheets
     - **GitOps**: ArgoCD (Pull-model concept) automate sync k8s manifest git repo and cluster
     - **Deployment Strategies**: Rolling update, Blue-Green, Canary
 
-
-
 - **Infrasructure as Code & Configuration (IaC)**
     - **Configuration**: Ansible (Playbooks, Roles, Ansible Galaxy).
     - **Infrastructure Provisioning**: Terraform / OpenTofu
@@ -56,7 +54,6 @@ Collection of cheatsheets
     - Redis (cache)
     - **Message Brokers**: RabbitMQ -> Kafka (Data Pipeline)
     - **Identity**: Keycloak (SSO-concept, OAuth2 / OIDC protocols)
-
 
 - **Python & MLOps Spec (Specific)**
     - **Python**: Basic syntaxis, API-requests, automatization (os, sys, boto3 libs)
