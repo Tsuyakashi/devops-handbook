@@ -24,11 +24,11 @@ Collection of cheatsheets
     - **Microsoft Azure**: Virtual Networks (VNet), Virtual Machines, AKS (Azure Kubernetes Service), Blob Storage, Azure AD / Entra ID.
     - **Cloud Concepts**: Multi-cloud strategies, Cost Optimization (FinOps), Shared Responsibility Model.
 
-- **Version Control, CI/CD, GitOps**
-    - **Git**: Git Flow, Branching, Merge, Rebase, cherry-pick, conflict resolution
-    - **CI/CD Platforms**: GitLab CI / Jenkins - Jenkins Shared Libraries & Declarative Pipline
-    - **GitOps**: ArgoCD (Pull-model concept) automate sync k8s manifest git repo and cluster
-    - **Deployment Strategies**: Rolling update, Blue-Green, Canary
+- **[Version Control, CI/CD & GitOps](CI-CD-and-GitOps/README.md)**:
+    - **[Advanced Git](CI-CD-and-GitOps/README.md#git-advanced)**: Git Flow vs Trunk-Based Development (Feature Flags), Merge vs Rebase (The Golden Rule), Squash, Merge Conflicts resolution.
+    - **[CI/CD Architecture](CI-CD-and-GitOps/README.md#cicd-architecture)**: Pipeline stages (Build, Test, DevSecOps/SAST), Artifacts management vs Caching strategies, Secrets management & OIDC (Passwordless cloud access).
+    - **[Deployment Strategies](CI-CD-and-GitOps/README.md#deployment-strategies)**: Blue-Green, Canary (Blast Radius), Rolling Updates (maxSurge, maxUnavailable), Recreate.
+    - **[GitOps & Declarative CD](CI-CD-and-GitOps/README.md#gitops-argo)**: Core Principles, Pull vs Push model, ArgoCD Architecture (Application Controller, OutOfSync), Sync Policies (Prune, Self Heal) & Webhooks optimization.
 
 - **Infrasructure as Code & Configuration (IaC)**
     - **Configuration**: Ansible (Playbooks, Roles, Ansible Galaxy).
