@@ -18,7 +18,7 @@ Collection of cheatsheets
     - **Web Servers**: [Nginx & Apache](Networking-and-Web-Servers/README.md#web-servers) (architectural differences, Reverse Proxy, load balancing algorithms)
     - **Troubleshooting**: [Practical Troubleshooting Box](Networking-and-Web-Servers/README.md#troubleshooting) (CLI tools for interviews and production: `ping`, `curl`, `traceroute`, `tcpdump`, `ss`, `nc`, `dig`)
 
-- **[Cloud Providers (AWS, Azure, GCP)](#cloud-providers)**:
+- **[Cloud Providers (AWS, Azure, GCP)](AWS-and-Cloud/README.md)**:
     - **AWS (Core Experience)**: VPC (Subnets, IGW, NAT Gateway, Security Groups), EC2, IAM (Roles, Policies, Instance Profiles), S3 (Storage Classes, Policies), EKS (Elastic Kubernetes Service), RDS, CloudWatch.
     - **Google Cloud Platform (GCP)**: VPC Network, Compute Engine, GKE (Google Kubernetes Engine), Cloud Storage, IAM & Service Accounts.
     - **Microsoft Azure**: Virtual Networks (VNet), Virtual Machines, AKS (Azure Kubernetes Service), Blob Storage, Azure AD / Entra ID.
