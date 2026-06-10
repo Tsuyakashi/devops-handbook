@@ -162,7 +162,7 @@
 
 - name: 4. Deploy Infrastructure (ArgoCD & Ingress)
   hosts: masters
-  become: false # Работаем от vagrant
+  become: false # Работаем от имени пользователя vagrant
   tasks:
     - name: add Helm repositories inside master
       command: "helm repo add {{ item.name }} {{ item.url }}"
@@ -179,13 +179,24 @@
       loop: [ 'argocd', 'ingress-nginx' ]
       failed_when: false 
 
-    - name: install ArgoCD via Helm CLI
+    - name: create temporary values file for ArgoCD
+      copy:
+        dest: /tmp/argocd-values.yaml
+        content: |
+          server:
+            ingress:
+              enabled: true
+              ingressClassName: nginx
+              hostname: argocd.local
+              annotations:
+                nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+                nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+
+    - name: install ArgoCD via Helm CLI using values file
       command: >
         helm upgrade --install argocd argo/argo-cd 
         --namespace argocd 
-        --set server.ingress.enabled=true 
-        --set server.ingress.ingressClassName=nginx 
-        --set server.ingress.hosts[0]=argocd.local
+        -f /tmp/argocd-values.yaml
         --wait --timeout 10m
 
     - name: install Ingress NGINX via Helm CLI
