@@ -1,24 +1,23 @@
 <a id="foundation-os"></a>
 
-# Foundation & OS:
+# Foundation & OS
 
-- Linux: 
-    - [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [Flavors](#ubuntu-flavors), [apt/Snap](#apt-snap)); 
+<a id="linux"></a>
+
+## Contents
+
+- **Linux Kernel & Distros:**
+    - [Ubuntu](#ubuntu) ([Desktop](#desktop), [Server](#server), [Cloud](#cloud), [WSL](#wsl), [Core](#ubuntu-core), [Flavors](#ubuntu-flavors), [apt/Snap](#apt-snap))
     - [RHEL / AlmaLinux / Rocky](#rhel) ([RHSM](#rhel-subscription), [клоны](#rhel-clones), [Amazon Linux](#amazon-linux), [dnf](#dnf-rhel), [firewalld](#firewall-rhel), [SELinux](#selinux), [сравнение с Ubuntu](#rhel-vs-ubuntu))
-- bash ([обзор](#bash-scripting), [grep](#grep), [sed](#sed), [awk](#awk))
-- virtualization ([обзор](#virtualization)): [KVM/QEMU](#kvm-qemu), [Vagrant](#vagrant)
-- [System management](#system-management): 
-  - [права](#permissions), 
-  - [systemd](#systemd), 
-  - [journald](#journald), 
-  - [cron](#cron), 
-  - [logrotate](#logrotate)
-  - [Управление процессами и ресурсами](#processes-resources)
-  - [Дисковая подсистема и LVM](#storage-lvm)
+- **Scripting & Automation:** [bash](#bash) ([обзор](#bash), [grep](#grep), [sed](#sed), [awk](#awk))
+- **Virtualization** ([обзор](#virtualization)): [KVM/QEMU](#kvm-qemu), [Vagrant](#vagrant)
+- **[System Management](#system-management):** [права](#permissions), [systemd](#systemd), [journald](#journald), [cron](#cron), [logrotate](#logrotate)
+- **[Process & Resource Management](#processes-resources)**
+- **[Disk Subsystem & LVM](#storage-lvm)**
 
 <a id="ubuntu"></a>
 
-# Ubuntu
+## Ubuntu
 
 В контексте AWS уже есть опыт взаимодействия с Ubuntu. Ubuntu де-факто является стандартом в серверной части. Также удобен в использовании как десктопная OS (по моему мнению, потому что достаточно популярна в сообществе и, вследствие этого, хорошо приспособлена для пользователя).
 
@@ -97,13 +96,13 @@
 
 <a id="rhel"></a>
 
-# Red Hat Enterprise Linux
+## Red Hat Enterprise Linux
 
 Большое семейство дистрибутивов для Enterprise: стабильность, сертификации, долгий жизненный цикл. В отличие от [Ubuntu](#ubuntu), RHEL и типичные форки — почти всегда серверные headless-инсталляции.
 
 <a id="rhel-subscription"></a>
 
-## Подписка: subscription-manager и RHSM
+### Подписка: subscription-manager и RHSM
 
 **RHEL** распространяется по **подписке** (Red Hat Subscription Management, **RHSM**). Плата не «за ISO», а за право обновлений, патчей безопасности, поддержки и доступа к официальным репозиториям на зарегистрированных системах.
 
@@ -114,14 +113,14 @@
 
 <a id="rhel-clones"></a>
 
-## Основные дистрибутивы семейства (клоны и форки)
+### Основные дистрибутивы семейства (клоны и форки)
 
 - **CentOS (устарело для «клон RHEL»):** классический CentOS Linux снят; **CentOS Stream** — rolling upstream перед RHEL, не замена стабильного «бинарного клона» для консервативного прода.
 - **AlmaLinux / Rocky Linux:** актуальные замены классическому CentOS; цель — совместимость пакетов/поведения с RHEL без подписки Red Hat.
 
 <a id="amazon-linux"></a>
 
-## Amazon Linux (специфика AWS)
+### Amazon Linux (специфика AWS)
 
 Оптимизированный дистрибутив Amazon для EC2.
 
@@ -131,7 +130,7 @@
 
 <a id="dnf-rhel"></a>
 
-## Пакетный менеджер: dnf (и yum)
+### Пакетный менеджер: dnf (и yum)
 
 Формат: **.rpm** (на Ubuntu — .deb через [apt](#apt-snap)).
 
@@ -144,14 +143,14 @@
 
 <a id="rhel-network"></a>
 
-## Сеть: NetworkManager vs Netplan
+### Сеть: NetworkManager vs Netplan
 
 - **RHEL / Alma / Rocky:** дефолт — **NetworkManager** (`nmcli`, конфиги в `/etc/NetworkManager/`). Каталог `/etc/sysconfig/network-scripts/` на RHEL 8/9 — legacy, не опора для новых установок.
 - **Ubuntu Server:** [netplan](#server) → чаще systemd-networkd; **netplan на RHEL не используется**.
 
 <a id="firewall-rhel"></a>
 
-## Файрвол: firewalld vs ufw
+### Файрвол: firewalld vs ufw
 
 | | **Ubuntu Server** | **RHEL / Alma / Rocky** |
 |---|-------------------|-------------------------|
@@ -163,7 +162,7 @@
 
 <a id="selinux"></a>
 
-## Безопасность: SELinux
+### Безопасность: SELinux
 
 Главное повседневное отличие от Ubuntu в проде.
 
@@ -181,7 +180,7 @@
 
 <a id="rhel-vs-ubuntu"></a>
 
-## RHEL vs Ubuntu
+### RHEL vs Ubuntu
 
 | Фича / Компонент | Ubuntu Server | RHEL / AlmaLinux / Amazon Linux |
 | :--- | :--- | :--- |
@@ -195,16 +194,17 @@
 
 См. также: [Virtualization](#virtualization).
 
-<a id="bash-scripting"></a>
+<a id="bash"></a>
 
-# Bash scripting
+## Bash scripting
 
 **Когда что использовать:** [grep](#grep) — найти строки по шаблону; [sed](#sed) — потоковое редактирование (замена, удаление, выбор строк); [awk](#awk) — столбцы, числа, агрегации по полям.
 
 <a id="grep"></a>
 
-## grep
-```
+### grep
+
+```bash
 grep [флаги] 'шаблон' [имя_файла]
 ```
 
@@ -230,9 +230,9 @@ grep [флаги] 'шаблон' [имя_файла]
 
 <a id="sed"></a>
 
-## sed
+### sed
 
-```
+```bash
 sed [флаги] 'команда' имя_файла
 ```
 
@@ -269,9 +269,9 @@ sed [флаги] 'команда' имя_файла
 
 <a id="awk"></a>
 
-## awk
+### awk
 
-```
+```bash
 awk '[условие] {действие}' имя_файла
 ```
 
@@ -318,13 +318,13 @@ awk '[условие] {действие}' имя_файла
 
 <a id="virtualization"></a>
 
-# Virtualization (KVM, QEMU) + Vagrant
+## Virtualization (KVM, QEMU) + Vagrant
 
 **Когда что использовать:** [KVM/QEMU](#kvm-qemu) — аппаратно ускоренные локальные VM; [Vagrant](#vagrant) — декларативные одноразовые окружения для разработки и лаб (не замена Terraform для облака).
 
 <a id="kvm-qemu"></a>
 
-## Виртуализация: KVM и QEMU
+### Виртуализация: KVM и QEMU
 
 На Linux **KVM** (модуль ядра) и **QEMU** (процесс в user-space) работают вместе: при включённых **Intel VT-x / AMD-V** производительность близка к нативной. Это не «чистый» гипервизор Type-1 вроде ESXi, а **гибрид** — KVM в ядре + QEMU с моделями устройств.
 
@@ -374,7 +374,7 @@ sudo systemctl enable --now libvirtd
 
 <a id="vagrant"></a>
 
-## Vagrant
+### Vagrant
 
 Инструмент для **локальных** воспроизводимых VM (HashiCorp). Удобен для лаб и «на моей машине работало», не для прод-деплоя в EC2.
 
@@ -429,13 +429,13 @@ end
 
 <a id="system-management"></a>
 
-# System Management
+## System Management
 
 Управление доступом, службами, планировщиком и логами — база администрирования и траблшутинга на [Ubuntu](#ubuntu) и [RHEL](#rhel).
 
 <a id="permissions"></a>
 
-## Управление правами: sudo, chmod, chown
+### Управление правами: sudo, chmod, chown
 
 Права: **u**ser, **g**roup, **o**thers × **r**ead (4), **w**rite (2), e**x**ecute (1). На RHEL после `chown` для веб-каталогов иногда нужен ещё [SELinux](#selinux) (`restorecon`), даже при верных `chmod`.
 
@@ -458,7 +458,7 @@ end
 
 <a id="systemd"></a>
 
-## Управление службами: systemd
+### Управление службами: systemd
 
 **systemd** — PID 1: службы, mount, target, сокеты, таймеры. Юниты — `.service`, `.timer`, `.mount` и др.
 
@@ -477,7 +477,7 @@ end
 
 <a id="journald"></a>
 
-## Логирование: systemd-journald
+### Логирование: systemd-journald
 
 **journald** — бинарный журнал ядра, systemd и сервисов. Лимиты диска: `/etc/systemd/journald.conf` (`SystemMaxUse`, `MaxRetentionSec`).
 
@@ -493,7 +493,7 @@ end
 
 <a id="cron"></a>
 
-## Планировщик: cron и systemd timers
+### Планировщик: cron и systemd timers
 
 ### cron
 
@@ -518,7 +518,7 @@ end
 
 <a id="logrotate"></a>
 
-## Ротация логов: logrotate
+### Ротация логов: logrotate
 
 Ротация файлов в `/var/log/` (не путать с бинарным **journald**). Запуск по cron или systemd timer.
 
@@ -549,7 +549,7 @@ end
 
 <a id="processes-resources"></a>
 
-## Управление процессами и ресурсами
+### Управление процессами и ресурсами
 
 ### Мониторинг памяти и CPU
 - `free -m` (или `-h`) — смотрим оперативную память и Swap. Важно: колонка `available` — сколько реально есть для запуска новых задач (а не `free`, которая часто забита кэшем).
@@ -568,7 +568,7 @@ end
 
 <a id="storage-lvm"></a>
 
-## Дисковая подсистема и LVM
+### Дисковая подсистема и LVM
 
 ### Базовая диагностика
 - `df -h` — сколько места свободно на смонтированных дисках.

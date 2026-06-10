@@ -58,7 +58,7 @@
 Экспортируем необходимые переменные для перенаправления трафика CLI на эндпоинты OpenRouter (вместо заблокированных или медленных дефолтных путей).
 Экспорт переменных окружения
 
-```
+```bash
 export ANTHROPIC_API_KEY="твой_токен_openrouter"
 export API_BASE_URL="https://openrouter.ai/api/v1"
 ```
@@ -67,7 +67,7 @@ export API_BASE_URL="https://openrouter.ai/api/v1"
 После того как CLI-инструмент отработал и подготовил изменения в режиме `accept edits on`, завершаем операцию стандартным Git-пайплайном.
 
 Стандартные Git-команды
-```
+```bash
 git status
 git add .
 git commit -m "docs: integrate interactive anchors and expand web server topics"
