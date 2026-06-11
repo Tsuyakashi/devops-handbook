@@ -188,25 +188,16 @@
       failed_when:
         - ns_result.rc != 0
         - "'AlreadyExists' not in ns_result.stderr"
-
-    - name: Write ArgoCD values file
-      copy:
-        dest: /tmp/argocd-values.yaml
-        content: |
-          server:
-            ingress:
-              enabled: true
-              ingressClassName: nginx
-              hostname: argocd.local
-              annotations:
-                nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-                nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-
-    - name: Install ArgoCD
+   
+    - name: Install ArgoCD    
       command: >
         helm upgrade --install argocd argo/argo-cd
         --namespace argocd
-        -f /tmp/argocd-values.yaml
+        --set server.ingress.enabled=true
+        --set server.ingress.ingressClassName=nginx
+        --set server.ingress.hostname=argocd.local
+        --set server.ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-passthrough"=true
+        --set server.ingress.annotations."nginx\.ingress\.kubernetes\.io/backend-protocol"=HTTPS
         --wait --timeout 10m
 
     - name: Install Ingress NGINX
