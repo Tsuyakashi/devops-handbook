@@ -12,9 +12,15 @@ NODES = {
     ip:       "192.168.56.11",
     memory:   1536,
     cpus:     1
+  },
+  "worker-2" => {
+    hostname: "k8s-worker-2",
+    ip:       "192.168.56.12",
+    memory:   1536,
+    cpus:     1
   }
 }
-
+	
 Vagrant.configure("2") do |config|
   config.vagrant.plugins = ["vagrant-libvirt"]
   config.vm.box = "bento/ubuntu-24.04"
@@ -35,18 +41,19 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define "worker-1" do |worker|
-    worker.vm.provision "ansible" do |ansible|
+  config.vm.define "worker-2" do |last|
+    last.vm.provision "ansible" do |ansible|
       ansible.playbook           = "ansible/site.yml"
       ansible.compatibility_mode = "2.0"
       ansible.limit              = "all"
       ansible.groups = {
         "masters" => ["master"],
-        "workers" => ["worker-1"]
+        "workers" => ["worker-1", "worker-2"]
       }
       ansible.host_vars = {
         "master"   => { "ansible_host" => NODES["master"][:ip] },
-        "worker-1" => { "ansible_host" => NODES["worker-1"][:ip] }
+        "worker-1" => { "ansible_host" => NODES["worker-1"][:ip] },
+	"worker-2" => { "ansible_host" => NODES["worker-2"][:ip] }
       }
     end
   end
