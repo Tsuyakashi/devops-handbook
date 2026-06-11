@@ -62,8 +62,31 @@ Vagrant.configure("2") do |config|
           "workers"          => ["worker-1"]
         }
       end
+
       ansible.host_vars = NODES.transform_values { |cfg| { "ansible_host" => cfg[:ip] } }
-      ansible.extra_vars = { "control_plane_vip" => CONTROL_PLANE_VIP }
+
+      env_vars = {}
+      if File.exist?(".env")
+        File.readlines(".env").each do |line|
+          line = line.strip
+          next if line.empty? || line.start_with?("#")
+          
+          if line.include?("=")
+            key, value = line.split("=", 2)
+            # Очищаем от возможных пробелов и лишних кавычек
+            cleaned_key = key.strip.downcase
+            cleaned_value = value.strip.gsub(/^["']|["']$/, "")
+            
+            env_vars[cleaned_key] = cleaned_value
+          end
+        end
+      end
+
+      ansible.extra_vars = { 
+        "control_plane_vip" => CONTROL_PLANE_VIP,
+        "github_user"       => env_vars["github_user"] || "default_user",
+        "github_token"      => env_vars["github_token"] || "default_token"
+      }
     end
   end
 end

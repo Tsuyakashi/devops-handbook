@@ -321,3 +321,49 @@
               nodePorts:
                 http: 30080
                 https: 30443
+
+- name: 8. Configure ArgoCD Repository & Autopilot Root Application
+  hosts: master_primary
+  become: false
+  tasks:
+    - name: Create GitHub Secret for ArgoCD Private Repo
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: github-private-repo-creds
+            namespace: argocd
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          stringData:
+            type: git
+            url: "https://github.com/{{ github_user }}/devops-handbook.git"
+            username: "{{ github_user }}"
+            password: "{{ github_token }}"
+
+    - name: Deploy Root Application with Auto-Sync
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: argoproj.io/v1alpha1
+          kind: Application
+          metadata:
+            name: root-app
+            namespace: argocd
+          spec:
+            project: default
+            source:
+              repoURL: "https://github.com/{{ github_user }}/devops-handbook.git"
+              targetRevision: HEAD
+              path: apps/test-app
+            destination:
+              server: 'https://kubernetes.default.svc'
+              namespace: default
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+              syncOptions:
+                - CreateNamespace=true
