@@ -147,17 +147,24 @@
       command: kubeadm token create --print-join-command
       register: join_command_raw
 
-    # Сохраняем в fact, чтобы был доступен в следующем play
-    - name: Set join command as host fact
-      set_fact:
-        join_command: "{{ join_command_raw.stdout }}"
+    - name: Save join command to file
+      copy:
+        content: "{{ join_command_raw.stdout }}"
+        dest: /tmp/join-command.sh
+        mode: "0755"
 
 - name: 4. Join Worker Nodes
   hosts: workers
   become: true
   tasks:
+    - name: Read join command from master
+      slurp:
+        src: /tmp/join-command.sh
+      delegate_to: master
+      register: join_command_file
+
     - name: Join worker to cluster
-      command: "{{ hostvars['master']['join_command'] }}"
+      command: "{{ join_command_file.content | b64decode | trim }}"
       args:
         creates: /etc/kubernetes/kubelet.conf
 
@@ -165,46 +172,64 @@
   hosts: masters
   become: false
   tasks:
+    - name: Install pip3
+      become: true
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: true
+
+    - name: Install kubernetes Python library
+      become: true
+      pip:
+        name: kubernetes
+        state: present
+        extra_args: "--break-system-packages --ignore-installed PyYAML"
+
+    - name: Create namespaces
+      kubernetes.core.k8s:
+        name: "{{ item }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+      loop: [argocd, ingress-nginx]
+
     - name: Add Helm repositories
-      command: helm repo add {{ item.name }} {{ item.url }}
+      kubernetes.core.helm_repository:
+        name: "{{ item.name }}"
+        repo_url: "{{ item.url }}"
+        state: present
       loop:
         - { name: argo,          url: "https://argoproj.github.io/argo-helm" }
         - { name: ingress-nginx, url: "https://kubernetes.github.io/ingress-nginx" }
-      # repo add падает если репо уже есть — это не ошибка
-      register: repo_result
-      changed_when: "'already exists' not in repo_result.stderr"
-      failed_when:
-        - repo_result.rc != 0
-        - "'already exists' not in repo_result.stderr"
 
-    - name: Update Helm repositories
-      command: helm repo update
-
-    - name: Create namespaces
-      command: kubectl create namespace {{ item }}
-      loop: [argocd, ingress-nginx]
-      register: ns_result
-      changed_when: ns_result.rc == 0
-      failed_when:
-        - ns_result.rc != 0
-        - "'AlreadyExists' not in ns_result.stderr"
-   
-    - name: Install ArgoCD    
-      command: >
-        helm upgrade --install argocd argo/argo-cd
-        --namespace argocd
-        --set server.ingress.enabled=true
-        --set server.ingress.ingressClassName=nginx
-        --set server.ingress.hostname=argocd.local
-        --set server.ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-passthrough"=true
-        --set server.ingress.annotations."nginx\.ingress\.kubernetes\.io/backend-protocol"=HTTPS
-        --wait --timeout 10m
+    - name: Install ArgoCD
+      kubernetes.core.helm:
+        name: argocd
+        chart_ref: argo/argo-cd
+        chart_version: "7.3.8"
+        release_namespace: argocd
+        update_repo_cache: true
+        values:
+          server:
+            ingress:
+              enabled: true
+              ingressClassName: nginx
+              hostname: argocd.local
+              annotations:
+                nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+                nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 
     - name: Install Ingress NGINX
-      command: >
-        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx
-        --namespace ingress-nginx
-        --set controller.service.type=NodePort
-        --set controller.service.nodePorts.http=30080
-        --set controller.service.nodePorts.https=30443
-        --wait --timeout 10m
+      kubernetes.core.helm:
+        name: ingress-nginx
+        chart_ref: ingress-nginx/ingress-nginx
+        release_namespace: ingress-nginx
+        update_repo_cache: true
+        values:
+          controller:
+            service:
+              type: NodePort
+              nodePorts:
+                http: 30080
+                https: 30443

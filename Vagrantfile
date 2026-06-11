@@ -1,6 +1,5 @@
 ENV['VAGRANT_SERVER_URL'] = 'https://vagrant.elab.pro'
 
-# nodes configuration
 NODES = {
   "master" => {
     hostname: "k8s-master",
@@ -36,14 +35,18 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define "worker-1" do |last|
-    last.vm.provision "ansible" do |ansible|
-      ansible.playbook          = "ansible/site.yml"
+  config.vm.define "worker-1" do |worker|
+    worker.vm.provision "ansible" do |ansible|
+      ansible.playbook           = "ansible/site.yml"
       ansible.compatibility_mode = "2.0"
-      ansible.limit             = "all"
+      ansible.limit              = "all"
       ansible.groups = {
         "masters" => ["master"],
         "workers" => ["worker-1"]
+      }
+      ansible.host_vars = {
+        "master"   => { "ansible_host" => NODES["master"][:ip] },
+        "worker-1" => { "ansible_host" => NODES["worker-1"][:ip] }
       }
     end
   end
