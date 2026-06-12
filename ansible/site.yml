@@ -339,7 +339,7 @@
               argocd.argoproj.io/secret-type: repository
           stringData:
             type: git
-            url: "https://github.com/{{ github_user }}/devops-handbook.git"
+            url: "https://github.com/{{ github_user }}/{{ github_repo }}.git" # <-- Динамический репозиторий
             username: "{{ github_user }}"
             password: "{{ github_token }}"
 
@@ -355,7 +355,7 @@
           spec:
             project: default
             source:
-              repoURL: "https://github.com/{{ github_user }}/devops-handbook.git"
+              repoURL: "https://github.com/{{ github_user }}/{{ github_repo }}.git" # <-- И здесь
               targetRevision: HEAD
               path: apps/test-app
             destination:

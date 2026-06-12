@@ -1,3 +1,5 @@
 .vagrant/
 venv/
 .env
+config.yml
+.secret
