@@ -343,7 +343,7 @@
             username: "{{ github_user }}"
             password: "{{ github_token }}"
 
-    - name: Deploy Root Application with Auto-Sync
+    - name: Deploy Root Application (App of Apps)
       kubernetes.core.k8s:
         state: present
         definition:
@@ -355,15 +355,13 @@
           spec:
             project: default
             source:
-              repoURL: "https://github.com/{{ github_user }}/{{ github_repo }}.git" # <-- И здесь
+              repoURL: "https://github.com/{{ github_user }}/{{ github_repo }}.git"
               targetRevision: HEAD
-              path: apps/test-app
+              path: apps/applications        # <-- смотрит на папку с манифестами
             destination:
               server: 'https://kubernetes.default.svc'
-              namespace: default
+              namespace: argocd              # <-- Application объекты создаются в argocd
             syncPolicy:
               automated:
                 prune: true
                 selfHeal: true
-              syncOptions:
-                - CreateNamespace=true
