@@ -15,11 +15,11 @@ CONTROL_PLANE_VIP = CFG['cluster']['control_plane_vip']
 # Описываем топологию сети
 NODES = if CLUSTER_MODE == :ha
   {
-    "master-1" => { hostname: "k8s-master-1", ip: "192.168.56.10", memory: 1536, cpus: 1 },
-    "master-2" => { hostname: "k8s-master-2", ip: "192.168.56.11", memory: 1536, cpus: 1 },
-    "master-3" => { hostname: "k8s-master-3", ip: "192.168.56.12", memory: 1536, cpus: 1 },
-    "worker-1" => { hostname: "k8s-worker-1", ip: "192.168.56.21", memory: 1024, cpus: 1 },
-    "worker-2" => { hostname: "k8s-worker-2", ip: "192.168.56.22", memory: 1024, cpus: 1 }
+    "master-1" => { hostname: "k8s-master-1", ip: "192.168.56.10", memory: 2560, cpus: 2 }, # Мастерам по 2 ядра, чтобы etcd и API не вешались
+    "master-2" => { hostname: "k8s-master-2", ip: "192.168.56.11", memory: 2048, cpus: 2 },
+    "master-3" => { hostname: "k8s-master-3", ip: "192.168.56.12", memory: 2048, cpus: 2 },
+    "worker-1" => { hostname: "k8s-worker-1", ip: "192.168.56.21", memory: 3072, cpus: 2 }, # Воркерам наливаем побольше под тяжелый Прометеус и аппки
+    "worker-2" => { hostname: "k8s-worker-2", ip: "192.168.56.22", memory: 3072, cpus: 2 }
   }
 else
   {
