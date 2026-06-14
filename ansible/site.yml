@@ -264,6 +264,10 @@
         -l app=local-path-provisioner
         --timeout=120s
 
+    - name: Mark local-path as default StorageClass
+      command: >
+        kubectl patch storageclass local-path
+        -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
 - name: 7. Deploy ArgoCD & Ingress NGINX
   hosts: master_primary
