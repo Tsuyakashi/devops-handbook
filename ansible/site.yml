@@ -246,6 +246,25 @@
       args:
         creates: /etc/kubernetes/kubelet.conf
 
+- name: 6.5(7). Install Local Path Provisioner
+  hosts: master_primary
+  become: false
+  tasks:
+    - name: Apply local-path-provisioner manifest
+      command: >
+        kubectl apply -f
+        https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+      args:
+        creates: /etc/local-path-provisioner-installed
+
+    - name: Wait for local-path-provisioner to be ready
+      command: >
+        kubectl -n local-path-storage wait
+        --for=condition=ready pod
+        -l app=local-path-provisioner
+        --timeout=120s
+
+
 - name: 7. Deploy ArgoCD & Ingress NGINX
   hosts: master_primary
   become: false
