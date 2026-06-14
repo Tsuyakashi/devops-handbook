@@ -137,13 +137,17 @@
   hosts: master_primary
   become: true
   tasks:
-    - name: Deploy kubeadm config template
+    - name: Check if cluster already initialized
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: admin_conf
+
+      - name: Deploy kubeadm config template
       template:
         src: kubeadm-config.yaml.j2
         dest: /tmp/kubeadm-config.yaml
         mode: "0600"
-      args:
-        creates: /etc/kubernetes/admin.conf
+      when: not admin_conf.stat.exists
 
     - name: Run kubeadm init with config file
       command: >
