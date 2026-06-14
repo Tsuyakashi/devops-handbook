@@ -142,7 +142,7 @@
         path: /etc/kubernetes/admin.conf
       register: admin_conf
 
-      - name: Deploy kubeadm config template
+    - name: Deploy kubeadm config template
       template:
         src: kubeadm-config.yaml.j2
         dest: /tmp/kubeadm-config.yaml
