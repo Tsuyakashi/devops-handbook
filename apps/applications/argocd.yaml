@@ -9,32 +9,36 @@ spec:
   project: default
   source:
     repoURL: 'https://argoproj.github.io/argo-helm'
-    targetRevision: 7.3.0 # Укажи актуальную версию чарта
     chart: argo-cd
+    targetRevision: "7.3.8"
     helm:
       values: |
         global:
           domain: argocd.local
-        
-        # Здесь описываются кастомные настройки, репозитории, секурность
         configs:
           params:
-            server.insecure: "true" # Если SSL терминируется на Ingress
-          
-          # Переносим декларативное описание репозиториев сюда
-          repositories:
-            private-repo:
-              url: <твой_url_репозитория>
-              credentialTemplates:
-                - sshPrivateKeySecret:
-                    name: argocd-private-ssh-key
-                    key: ssh-privatekey
+            # ssl-passthrough: ArgoCD terminates TLS itself, so server must NOT be insecure
+            server.insecure: "false"
+        server:
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            hostname: argocd.local
+            annotations:
+              nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: argocd
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

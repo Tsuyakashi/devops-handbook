@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: kube-prometheus-stack
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argoproj.io/background
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
@@ -18,9 +22,25 @@ spec:
             hosts:
               - grafana.local
           adminPassword: "admin"
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki.monitoring.svc.cluster.local:3100
+              access: proxy
+              isDefault: false
+
         prometheus:
           prometheusSpec:
             retention: 7d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: local-path
+                  accessModes: [ReadWriteOnce]
+                  resources:
+                    requests:
+                      storage: 10Gi
+
         alertmanager:
           enabled: false
   destination:
