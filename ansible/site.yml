@@ -19,6 +19,13 @@
         state: present
       loop: [overlay, br_netfilter]
 
+    - name: Persist kernel modules across reboots
+      copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: |
+          overlay
+          br_netfilter
+
     - name: Configure sysctl for Kubernetes
       sysctl:
         name: "{{ item.name }}"
@@ -43,31 +50,24 @@
         state: directory
         mode: "0755"
 
-    - name: Generate default containerd config
-      shell: containerd config default > /etc/containerd/config.toml
-      args:
-        creates: /etc/containerd/config.toml
-
-    - name: Configure containerd (SystemdCgroup + pause image)
-      replace:
-        path: /etc/containerd/config.toml
-        regexp: "{{ item.regexp }}"
-        replace: "{{ item.replace }}"
-      loop:
-        - { regexp: 'SystemdCgroup = false', replace: 'SystemdCgroup = true' }
-        - { regexp: 'sandbox_image = "registry.k8s.io/pause:3.8"',
-            replace: 'sandbox_image = "registry.k8s.io/pause:3.9"' }
+    - name: Deploy containerd config from template
+      template:
+        src: containerd-config.toml.j2
+        dest: /etc/containerd/config.toml
+        owner: root
+        group: root
+        mode: "0644"
       notify: Restart containerd
 
     - name: Add Kubernetes APT key
       apt_key:
-        url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
         state: present
         keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
     - name: Add Kubernetes APT repository
       apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /"
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
         state: present
         filename: kubernetes
 
@@ -89,7 +89,7 @@
   tasks:
     - name: Download Helm archive
       get_url:
-        url: https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
+        url: "https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz"
         dest: /tmp/helm.tar.gz
         mode: "0644"
 
@@ -118,24 +118,13 @@
         state: present
         update_cache: true
 
-    - name: Configure keepalived
-      copy:
+    - name: Deploy keepalived config from template
+      template:
+        src: keepalived.conf.j2
         dest: /etc/keepalived/keepalived.conf
-        content: |
-          vrrp_instance VI_1 {
-            state {{ 'MASTER' if inventory_hostname == 'master-1' else 'BACKUP' }}
-            interface eth1
-            virtual_router_id 51
-            priority {{ '100' if inventory_hostname == 'master-1' else '50' }}
-            advert_int 1
-            authentication {
-              auth_type PASS
-              auth_pass k8s-ha
-            }
-            virtual_ipaddress {
-              {{ control_plane_vip }}
-            }
-          }
+        owner: root
+        group: root
+        mode: "0644"
       notify: Restart keepalived
 
   handlers:
@@ -209,6 +198,7 @@
 - name: 5. Join secondary masters
   hosts: master_secondary
   become: true
+  serial: 1
   tasks:
     - name: Read control plane join command
       slurp:
@@ -322,11 +312,12 @@
                 http: 30080
                 https: 30443
 
-- name: 8. Configure ArgoCD Repository & Autopilot Root Application
+- name: 8. Configure ArgoCD Repository & Root Application
   hosts: master_primary
   become: false
   tasks:
     - name: Create GitHub Secret for ArgoCD Private Repo
+      no_log: true
       kubernetes.core.k8s:
         state: present
         definition:
@@ -339,7 +330,7 @@
               argocd.argoproj.io/secret-type: repository
           stringData:
             type: git
-            url: "https://github.com/{{ github_user }}/{{ github_repo }}.git" # <-- Динамический репозиторий
+            url: "https://github.com/{{ github_user }}/{{ github_repo }}.git"
             username: "{{ github_user }}"
             password: "{{ github_token }}"
 
@@ -357,10 +348,10 @@
             source:
               repoURL: "https://github.com/{{ github_user }}/{{ github_repo }}.git"
               targetRevision: HEAD
-              path: apps/applications        # <-- смотрит на папку с манифестами
+              path: apps/applications
             destination:
               server: 'https://kubernetes.default.svc'
-              namespace: argocd              # <-- Application объекты создаются в argocd
+              namespace: argocd
             syncPolicy:
               automated:
                 prune: true
