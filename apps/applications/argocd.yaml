@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argoproj.io/background
+spec:
+  project: default
+  source:
+    repoURL: 'https://argoproj.github.io/argo-helm'
+    targetRevision: 7.3.0 # Укажи актуальную версию чарта
+    chart: argo-cd
+    helm:
+      values: |
+        global:
+          domain: argocd.local
+        
+        # Здесь описываются кастомные настройки, репозитории, секурность
+        configs:
+          params:
+            server.insecure: "true" # Если SSL терминируется на Ingress
+          
+          # Переносим декларативное описание репозиториев сюда
+          repositories:
+            private-repo:
+              url: <твой_url_репозитория>
+              credentialTemplates:
+                - sshPrivateKeySecret:
+                    name: argocd-private-ssh-key
+                    key: ssh-privatekey
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
