@@ -3,12 +3,12 @@ require 'yaml'
 ENV['VAGRANT_SERVER_URL'] = 'https://vagrant.elab.pro'
 
 # Проверяем наличие файла конфигурации
-unless File.exist?("config.yml")
+unless File.exist?(File.join(File.dirname(__FILE__), "config.yml"))
   raise "Critical error: config.yml not found! Copy config sample"
 end
 
 # Загружаем параметры из YAML
-CFG = YAML.load_file("config.yml")
+CFG = YAML.load_file(File.join(File.dirname(__FILE__), "config.yml"))
 CLUSTER_MODE = CFG['cluster']['mode'].to_sym
 CONTROL_PLANE_VIP = CFG['cluster']['control_plane_vip']
 
