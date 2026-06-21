@@ -85,8 +85,12 @@ Vagrant.configure("2") do |config|
 
         node.trigger.after :provision do |trigger|
           trigger.name = "Pulling secret to host machine"
+          host_secret_path = File.join(File.dirname(__FILE__), CFG['secrets']['output_file'])
+          
+          # Вызываем системный bash хоста напрямую через Ruby, 
+          # экранируя кавычки для SSH-команды
           trigger.run = {
-            inline: "ruby -e \"system('vagrant ssh master-1 -c \\\"cat /tmp/argo.secret\\\" > #{CFG['secrets']['output_file']}')\""
+            inline: "bash -c 'vagrant ssh master-1 -c \"cat /tmp/argo.secret\" > #{host_secret_path}'"
           }
         end
       end
