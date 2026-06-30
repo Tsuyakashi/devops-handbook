@@ -40,7 +40,7 @@ Vagrant.configure("2") do |config|
     ".git/",
     ".vagrant/",
     "archive/",
-    "cheetsheets/",    # Исключаем твои шпаргалки
+    "docs/",    # Исключаем твои шпаргалки
     "*.md",            # Исключаем README.md и прочие доки
     "config.yml",      # Ansible их все равно получит через extra_vars, нодам этот файл внутри ни к чему
     ".secret"
