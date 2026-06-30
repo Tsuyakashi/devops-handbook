@@ -1,5 +1,7 @@
 # Version Control, CI/CD & GitOps
 
+> 🔗 Практическая лаборатория: [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci)
+
 ### Contents
 - **[Advanced Version Control](#git-advanced)**: Git Flow vs Trunk-Based Development, Merge vs Rebase, Merge Conflicts resolution
 - **[CI/CD Pipelines Architecture](#cicd-architecture)**: Pipeline stages, Artifacts management, Caching strategies, Security (Secrets management, OIDC)

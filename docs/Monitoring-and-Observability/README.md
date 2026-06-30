@@ -2,6 +2,8 @@
 
 # Monitoring & Observability
 
+> 🔗 Практическая лаборатория: [`monitoring-stack`](https://github.com/Tsuyakashi/monitoring-stack)
+
 ### Contents
 
 - **[Metrics & Dashboards](#monitoring)**: Prometheus & Grafana (типы метрик, PromQL, дизайн дашбордов, Alertmanager).
