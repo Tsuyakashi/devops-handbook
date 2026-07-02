@@ -177,18 +177,18 @@ docker run --tmpfs /app/cache:rw,size=64m myapp
 Kubernetes раскладывается на две принципиально разные группы компонентов: **мозг кластера (Control Plane)**, который принимает решения, и **рабочие руки (Worker Nodes)**, которые физически запускают контейнеры.
 
 ```text
-                     ┌─────────────────────── CONTROL PLANE ───────────────────────┐
-                     │                                                              │
-  kubectl apply  →   │  API Server  ←→  etcd  ←→  Scheduler  ←→  Controller Mgr   │
-                     │                                                              │
-                     └──────────────────────────────┬───────────────────────────────┘
+                       ┌─────────────────────── CONTROL PLANE ────────────────────────┐
+                       │                                                              │
+  kubectl apply  →     │  API Server  ←→  etcd  ←→  Scheduler  ←→  Controller Mgr     │
+                       │                                                              │
+                       └──────────────────────────────┬───────────────────────────────┘
                                                       │ (наблюдение / команды)
-                     ┌────────────────────────────────┴───────────────────────────────┐
-                     │                        WORKER NODES                            │
+                     ┌────────────────────────────────┴────────────────────────────────┐
+                     │                        WORKER NODES                             │
                      │                                                                 │
-                     │   kubelet  ←→  Container Runtime (containerd)  +  kube-proxy   │
+                     │   kubelet  ←→  Container Runtime (containerd)  +  kube-proxy    │
                      │      ↓                                                          │
-                     │   [ Pod ]  [ Pod ]  [ Pod ]                                      │
+                     │   [ Pod ]  [ Pod ]  [ Pod ]                                     │
                      └─────────────────────────────────────────────────────────────────┘
 ```
 
