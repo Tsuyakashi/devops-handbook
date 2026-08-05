@@ -2,12 +2,12 @@
 
 # Monitoring & Observability
 
-> 🔗 Практическая лаборатория: [`monitoring-stack`](https://github.com/Tsuyakashi/monitoring-stack)
+> 🔗 Практическая лаборатория: [`monitoring-stack`](https://github.com/Tsuyakashi/monitoring-stack), [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci) (ELK как Infrastructure-as-Code)
 
 ### Contents
 
 - **[Metrics & Dashboards](#monitoring)**: Prometheus & Grafana (типы метрик, PromQL, дизайн дашбордов, Alertmanager).
-- **[Log Management](#logging)**: ELK Stack (Elasticsearch, Logstash, Kibana, Filebeat), Grafana Loki, Loki vs ELK.
+- **[Log Management](#logging)**: ELK Stack (Elasticsearch, Logstash, Kibana, Filebeat), ELK как Infrastructure-as-Code, Grafana Loki, Loki vs ELK.
 - **[SRE Methodology](#sre)**: SLA / SLO / SLI, Error Budget, Root Cause Analysis (RCA).
 
 ---
@@ -217,7 +217,85 @@ filter {
 
 ---
 
-### 3. Grafana Loki: "Prometheus для логов"
+### 3. ELK как Infrastructure-as-Code
+
+Стандартный туториал по ELK заканчивается на «поставили контейнеры, зашли в Kibana мышкой и настроили руками». Для воспроизводимого стенда (Vagrant/Ansible-провижининг, CI-лаба) оба этих шага нужно сделать декларативными — и у обоих есть неочевидные ловушки.
+
+> 🔗 Практическая реализация: [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci) — узел `monitoring-node` поднимает полный ELK-стек и импортирует готовый дашборд полностью автоматически при `vagrant up`, без единого клика в UI.
+
+#### Проблема 1: security bootstrap Elasticsearch без ручного логина
+
+С `xpack.security.enabled: true` Elasticsearch поднимается с системным пользователем `kibana_system`, у которого **нет** пароля по умолчанию — то есть Kibana физически не может подключиться, пока пароль не выставлен, а выставить его можно только через уже запущенный и готовый кластер (`_security/user/.../_password`). Классическая проблема курицы и яйца при полностью автоматическом деплое.
+
+Решение — обернуть штатный entrypoint контейнера в скрипт, который запускает его в фоне, дожидается готовности кластера поллингом, и только затем программно выставляет пароль:
+
+```bash
+#!/bin/bash
+# es-setup.sh
+/usr/local/bin/docker-entrypoint.sh &   # штатный entrypoint — в фон
+
+until curl -s -u "elastic:${ELASTIC_PASSWORD}" http://localhost:9200/_cluster/health \
+    | grep -q 'yellow\|green'; do
+  sleep 2
+done
+
+curl -s -X POST -u "elastic:${ELASTIC_PASSWORD}" \
+  -H 'Content-Type: application/json' \
+  http://localhost:9200/_security/user/kibana_system/_password \
+  -d "{\"password\": \"${KIBANA_SYSTEM_PASSWORD}\"}"
+
+wait   # держим PID 1 на фоновом entrypoint-процессе
+```
+```yaml
+# docker-compose.monitoring.yml (фрагмент)
+elasticsearch:
+  entrypoint: ["/bin/bash", "/es-setup.sh"]
+  environment:
+    - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+  healthcheck:
+    test: ["CMD-SHELL", "curl -s -u elastic:$$ELASTIC_PASSWORD http://localhost:9200/_cluster/health | grep -q 'yellow\\|green'"]
+```
+
+> **DevOps-инсайт:** `wait` в конце скрипта критичен — без него bash-обёртка завершится сразу после фонового запуска entrypoint, Docker решит, что процесс контейнера завершён, и убьёт весь контейнер вместе с только что запущенным Elasticsearch.
+
+#### Проблема 2: Dashboard-as-Code — визуализации без единого клика в Kibana
+
+Обычно дашборды в Kibana собираются мышкой и живут только в конкретной инсталляции. Чтобы дашборд был воспроизводим вместе с остальной инфраструктурой (пересоздал стенд — получил те же графики), Kibana предоставляет Saved Objects API для экспорта/импорта:
+
+```bash
+# Экспорт (делается один раз локально, руками, чтобы получить файл для репозитория)
+curl -X POST "http://localhost:5601/api/saved_objects/_export" \
+  -H "kbn-xsrf: true" -H "Content-Type: application/json" \
+  -d '{"type": ["index-pattern", "dashboard"]}' > dashboards.ndjson
+
+# Импорт (автоматизируется в provision-скрипте, выполняется при каждом поднятии стенда)
+curl -s -X POST "http://localhost:5601/api/saved_objects/_import?overwrite=true" \
+  -H "kbn-xsrf: true" \
+  --form file=@/app/configs/kibana/dashboards.ndjson
+```
+
+Полный provision-скрипт дожидается готовности Kibana тем же паттерном поллинга, что и Elasticsearch выше, прежде чем пытаться импортировать:
+
+```bash
+until curl -sf http://localhost:5601/api/status | grep -q '"level":"available"'; do
+  sleep 5
+done
+
+curl -s -X POST "http://localhost:5601/api/saved_objects/_import?overwrite=true" \
+  -H "kbn-xsrf: true" \
+  --form file=@/app/configs/kibana/dashboards.ndjson
+```
+
+* **`dashboards.ndjson`** — формат newline-delimited JSON, где каждая строка — отдельный saved object (`index-pattern`, `dashboard`, `lens`-визуализация), связанные между собой по `id` через поле `references`. Файл коммитится в репозиторий как обычный конфиг.
+* **`kbn-xsrf: true`** — обязательный заголовок для любого POST/PUT-запроса к Kibana API; без него запрос будет отклонён встроенной защитой от CSRF.
+* **`?overwrite=true`** — критично для идемпотентности: без этого флага повторный `vagrant up`/`terraform apply` на уже существующем стенде вернёт конфликт `409` вместо тихого обновления объекта.
+
+> **DevOps-инсайт:** Dashboard-as-Code — тот же принцип декларативности, что и в GitOps (см. [CI/CD & GitOps](../CI-CD-and-GitOps/README.md#gitops-argo)), только применённый не к инфраструктуре кластера, а к содержимому конкретного SaaS-подобного UI. Любой инструмент с Saved-Objects-подобным API (Grafana дашборды через `provisioning/dashboards/`, тоже JSON-файлы на диске) поддаётся этому же паттерну: экспортировать один раз вручную → закоммитить → импортировать автоматически при каждом провижининге.
+
+---
+
+### 4. Grafana Loki: "Prometheus для логов"
 
 **Loki** — современная альтернатива ELK, спроектированная Grafana Labs специально под Kubernetes-нативные сценарии.
 
@@ -247,7 +325,7 @@ sum(rate({app="payments"} |= "ERROR" [5m]))
 
 ---
 
-### 4. Vector и Fluent Bit: легковесные форвардеры нового поколения
+### 5. Vector и Fluent Bit: легковесные форвардеры нового поколения
 
 Logstash, написанный на JVM, требует сотни мегабайт RAM просто на старте, что неприемлемо при запуске как DaemonSet на каждой ноде Kubernetes (десятки нод × сотни мегабайт = ощутимая статья расходов на ресурсы кластера).
 

@@ -5,7 +5,8 @@
 ### Contents
 - **[Advanced Version Control](#git-advanced)**: Git Flow vs Trunk-Based Development, Merge vs Rebase, Merge Conflicts resolution
 - **[CI/CD Pipelines Architecture](#cicd-architecture)**: Pipeline stages, Artifacts management, Caching strategies, Security (Secrets management, OIDC)
-- **[Deployment Strategies](#deployment-strategies)**: Blue-Green, Canary, Rolling Updates, Recreate
+- **[CI Systems in Practice](#ci-systems-practice)**: сравнение change detection в GitLab CI / GitHub Actions / Bitbucket Pipelines / Jenkins, headless bootstrap self-hosted раннеров
+- **[Deployment Strategies](#deployment-strategies)**: Blue-Green, Canary, Rolling Updates, Recreate, легковесный pull-деплой без оркестратора
 - **[GitOps & Declarative CD](#gitops-argo)**: GitOps Core Principles, Pull vs Push model, ArgoCD Architecture, Sync Policies & Webhooks optimization
 
 ---
@@ -82,7 +83,7 @@
    * Если это был rebase: продолжаем процесс командой `git rebase --continue`.
    * Если всё пошло не так и ты запутался, всегда можно безопасно откатиться к исходному состоянию: `git merge --abort` или `git rebase --abort`.
 
-   <a id="cicd-architecture"></a>
+<a id="cicd-architecture"></a>
 
 ## CI/CD Pipelines Architecture
 
@@ -148,6 +149,116 @@
 3. Пайплайн стучится в облако (AWS STS) и говорит: *«Я хочу принять роль `DeployerRole`. Вот мой JWT-токен от GitHub»*.
 4. AWS проверяет подпись GitHub (через открытые ключи), парсит JWT и смотрит в настройки своей IAM Роли: *«Так, этой роли разрешено принимать запросы от репозитория daniil/agentic-news. Всё сходится»*.
 5. AWS STS выдает пайплайну **временные access-ключи**, которые автоматически превратятся в тыкву через 15-60 минут. Никаких постоянных секретов в репозитории не хранится вообще.
+
+<a id="ci-systems-practice"></a>
+
+## CI Systems in Practice
+
+> 🔗 Практический стенд: [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci) — три сервиса (Python/Go/Node.js), собираемые и деплоящиеся параллельно четырьмя разными CI-системами на одну общую прод-инфраструктуру.
+
+Теория пайплайнов у всех CI-систем одинакова (build → test → deploy), но **синтаксис change detection** — "собери и задеплой только то, что реально изменилось" — у каждой системы принципиально разный. Именно этот механизм определяет, будет ли монорепо с несколькими сервисами дешёвым в CI-минутах или будет пересобирать всё подряд на каждый пуш.
+
+### 1. Сравнение синтаксиса change detection по системам
+
+| CI-система | Механизм | Синтаксис | Особенность |
+| :--- | :--- | :--- | :--- |
+| **GitLab CI** | `rules: changes:` в конфиге каждого job | ```yaml\nrules:\n  - if: $CI_COMMIT_BRANCH == "main"\n    changes:\n      - python/**/*``` | Каждый сервис — отдельный `job` (`build_python`, `build_go`...). GitLab **не поддерживает** динамический `matrix` с трекингом `changes` внутри одной job — приходится дублировать job-блоки через YAML-якоря (`extends:`). |
+| **GitHub Actions** | `dorny/paths-filter` (сторонний Action) + `strategy.matrix` | ```yaml\n- uses: dorny/paths-filter@v3\n  with:\n    filters: |\n      python: 'python/**'\nstrategy:\n  matrix:\n    service: ${{ fromJSON(needs.detect.outputs.services) }}``` | Единственный подход, где один `job` с `matrix` динамически разворачивается на N сервисов сразу — самый компактный синтаксис из всех четырёх. |
+| **Bitbucket Pipelines** | `condition.changesets.includePaths` внутри каждого `step` | ```yaml\ncondition:\n  changesets:\n    includePaths:\n      - "python/**"``` | Условие живёт прямо в `step`, а не в отдельном detect-job — DAG получается плоским, `parallel:` блок просто пропускает степы без совпадения путей. |
+| **Jenkins (Scripted Pipeline)** | Ручной `git diff --name-only` + переменные окружения | ```groovy\ndef changed = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true)\nenv.BUILD_PYTHON = changed.contains('python/') ? 'true' : 'false'``` | Нет готового плагина "из коробки" — логика диффа пишется руками на Groovy, а `when { expression { env.BUILD_PYTHON == 'true' } }` управляет тем, какие `parallel`-стадии реально выполнятся. |
+
+> **DevOps-инсайт:** GitHub Actions с `dorny/paths-filter` + `matrix` — самый DRY (Don't Repeat Yourself) вариант: один блок кода обслуживает произвольное число сервисов. GitLab и Jenkins требуют по блоку кода на каждый сервис (что многословнее, но зато нагляднее в логах — сразу видно `build_python` как отдельный job, а не безликий `matrix: python`).
+
+### 2. Headless bootstrap self-hosted раннеров
+
+Когда нужно поднять self-hosted раннер без ручного захода в веб-интерфейс (например, в рамках `vagrant up` / Ansible-провижининга), у каждой системы свой способ non-interactive регистрации:
+
+* **GitLab Runner** — регистрация одной командой с токеном:
+  ```bash
+  gitlab-runner register --non-interactive \
+    --url "https://gitlab.com/" \
+    --token "$REGISTRATION_TOKEN" \
+    --executor "docker" \
+    --docker-image "docker:24.0.9"
+  gitlab-runner install --user=gitlab-runner
+  gitlab-runner start
+  ```
+* **GitHub Actions self-hosted runner** — токен регистрации сначала запрашивается через REST API (`POST /repos/{repo}/actions/runners/registration-token`), затем раннер конфигурируется и ставится как systemd-сервис:
+  ```bash
+  TOKEN=$(curl -s -X POST -H "Authorization: token $GITHUB_PAT" \
+    "https://api.github.com/repos/$GITHUB_REPO/actions/runners/registration-token" \
+    | jq -r .token)
+  ./config.sh --url "https://github.com/$GITHUB_REPO" --token "$TOKEN" --unattended
+  ./svc.sh install && ./svc.sh start
+  ```
+* **Bitbucket Pipelines runner** — не бинарник, а готовый Docker-образ; конфигурируется целиком через переменные окружения (workspace/repository/runner UUID + OAuth credentials), без отдельного шага регистрации:
+  ```bash
+  docker run -d --restart always \
+    -e ACCOUNT_UUID=$BB_ACCOUNT_UUID -e REPOSITORY_UUID=$BB_REPOSITORY_UUID \
+    -e RUNNER_UUID=$BB_RUNNER_UUID -e OAUTH_CLIENT_ID=$BB_OAUTH_CLIENT_ID \
+    -e OAUTH_CLIENT_SECRET=$BB_OAUTH_CLIENT_SECRET \
+    docker-public.packages.atlassian.com/sox/atlassian/bitbucket-pipelines-runner
+  ```
+
+#### Особый случай: headless-bootstrap самого Jenkins (без раннера — без веб-мастера)
+
+Jenkins не нужен «раннер» в привычном смысле (сам Jenkins и есть control plane + executor), но у него есть куда более болезненная проблема — **Setup Wizard**, который штатно требует ручного захода в браузер и ввода admin-пароля из файла на диске. Полностью безголовый bootstrap делается через два малоизвестных механизма:
+
+1. **`init.groovy.d`** — любой `.groovy`-файл в этой директории выполняется автоматически при старте Jenkins, до готовности веб-интерфейса. Используется для программного создания администратора и отключения Setup Wizard:
+   ```groovy
+   // /var/lib/jenkins/init.groovy.d/01-admin.groovy
+   import jenkins.model.*
+   import hudson.security.*
+
+   def instance = Jenkins.getInstance()
+   def hudsonRealm = new HudsonPrivateSecurityRealm(false)
+   hudsonRealm.createAccount("admin", "${JENKINS_ADMIN_PASSWORD}")
+   instance.setSecurityRealm(hudsonRealm)
+
+   def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+   strategy.setAllowAnonymousRead(false)
+   instance.setAuthorizationStrategy(strategy)
+   instance.save()
+   ```
+   Плюс явно проставленный флаг, что мастер уже "пройден":
+   ```bash
+   echo 2 > /var/lib/jenkins/jenkins.install.UpgradeWizard.state
+   ```
+
+2. **Script Console API (`/scriptText`)** — эндпоинт, позволяющий выполнить произвольный Groovy-скрипт через авторизованный `curl`-запрос, без единого клика в UI. Именно так после старта устанавливаются плагины, создаются credentials и pipeline-джоба:
+   ```bash
+   curl -sf -u "admin:${JENKINS_ADMIN_PASSWORD}" \
+     "http://localhost:8080/scriptText" \
+     --data-urlencode "script@plugins.groovy"
+   ```
+   ```groovy
+   // plugins.groovy — установка плагинов через PluginManager напрямую из кода
+   def pm = Jenkins.getInstance().getPluginManager()
+   def uc = Jenkins.getInstance().getUpdateCenter()
+   uc.updateAllSites()
+   ["workflow-aggregator","git","credentials-binding","docker-workflow","github"].each { name ->
+       if (!pm.getPlugin(name)) { uc.getPlugin(name)?.deploy(true) }
+   }
+   ```
+   ```groovy
+   // credentials-and-job.groovy — credential + WorkflowJob, читающий Jenkinsfile прямо из GitHub
+   def store = Jenkins.getInstance()
+       .getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0]
+       .getStore()
+   store.addCredentials(Domain.global(), new StringCredentialsImpl(
+       CredentialsScope.GLOBAL, 'watchtower-token', 'Watchtower Token',
+       Secret.fromString('${WATCHTOWER_TOKEN}')
+   ))
+
+   def job = Jenkins.getInstance().createProject(WorkflowJob.class, 'poly-ci')
+   job.setDefinition(new CpsScmFlowDefinition(
+       new GitSCM('https://github.com/${GITHUB_REPO}.git'), 'Jenkinsfile'
+   ))
+   ```
+
+> **DevOps-инсайт:** после установки новых плагинов Jenkins обязательно нужно перезапустить (`Jenkins.getInstance().safeRestart()`) и подождать, пока порт снова начнёт отвечать `200` на `/login`, прежде чем выполнять следующий Script Console запрос — иначе `curl` попадёт в окно рестарта и просто зависнет/провалится по таймауту. На практике это решается циклом `until curl -sf http://localhost:8080/login; do sleep 3; done` между шагами.
+
+---
 
 <a id="deployment-strategies"></a>
 
@@ -245,14 +356,39 @@
 
 ---
 
-### Сводная шпаргалка по стратегиям деплоя
+### 5. Lightweight pull-based deploy без оркестратора (Watchtower)
 
-| Стратегия | Наличие Downtime | Риск для прода | Затраты на ресурсы | Сложность настройки |
-| :--- | :--- | :--- | :--- | :--- |
-| **Recreate** | Да | Средний | Низкие ($1\times$) | Низкая |
-| **Rolling Update**| Нет | Средний | Низкие ($1\times + \text{maxSurge}$) | Низкая (из коробки в K8s) |
-| **Blue-Green** | Нет | Низкий | Высокие ($2\times$) | Средняя |
-| **Canary** | Нет | Минимальный | Низкие ($1\times$) | Высокая |
+Все четыре стратегии выше предполагают оркестратор (Kubernetes/Swarm), который умеет health-check'ать и постепенно переключать трафик сам. Но на голом `docker-compose` без оркестратора (маленький проект, один VPS, staging-окружение) нужен максимально простой механизм — точечное обновление **одного** контейнера без даунтайма всего стека и без прямого SSH-доступа CI к продакшену.
+
+> 🔗 Практическая реализация: [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci) — три независимых сервиса (Python/Go/Node.js) на одном хосте, каждый обновляется отдельно.
+
+#### Как это работает
+
+```text
+[CI пайплайн]
+    ↓ 1. docker build + push нового образа в registry
+    ↓ 2. POST http://prod-host:8080/v1/update?container=<service>-app
+        Authorization: Bearer $WATCHTOWER_TOKEN
+[Watchtower на прод-ноде]
+    ↓ 3. Слушает HTTP API (WATCHTOWER_HTTP_API_UPDATE=true)
+    ↓ 4. Тянет свежий образ из registry, находит указанный контейнер
+    ↓ 5. Плавно пересоздаёт ТОЛЬКО этот контейнер (остальные не трогает)
+```
+
+* **Watchtower** — легковесный контейнер-агент, который либо опрашивает registry по расписанию (`WATCHTOWER_POLL_INTERVAL`), либо принимает HTTP-вебхук на точечное обновление конкретного контейнера по имени.
+* **Точечность** — ключевое отличие от «обновить весь docker-compose стек». Пайплайн бьёт по конкретному сервису: `?container=python-app`, `?container=go-app` — остальные сервисы стека продолжают работать без перезапуска, даже если у них общая сеть.
+* **Авторизация** — простой Bearer-токен (`WATCHTOWER_HTTP_API_TOKEN`), которого достаточно, если сам эндпоинт закрыт от внешнего мира (см. IP-restricted паттерн в [Networking & Web Servers](../Networking-and-Web-Servers/README.md#internal-endpoints)) — комбинация «токен + сетевое ограничение по IP раннера» даёт разумный уровень защиты для небольшого стенда без городения полноценного OIDC.
+
+#### Место в общей картине стратегий
+
+| Критерий | Watchtower webhook | Rolling Update (K8s) |
+| :--- | :--- | :--- |
+| **Нужен оркестратор** | Нет — обычный `docker-compose` | Да — Kubernetes/Swarm |
+| **Даунтайм** | Кратковременный на **один** сервис (секунды пересоздания контейнера) | Отсутствует (постепенная замена подов) |
+| **Health-check перед переключением трафика** | Нет из коробки (Watchtower не умеет ждать readiness) | Да, встроено в контроллер |
+| **Типичный масштаб** | Один VPS, staging, pet-проекты, MVP | Прод-кластер с несколькими нодами |
+
+> **DevOps-инсайт:** это осознанный компромисс, а не «Rolling Update для бедных» — если сервис не переживает секундный рестарт (например, за ним нет балансировщика с несколькими репликами), Watchtower-паттерн даёт даунтайм ровно на длительность пересоздания контейнера. Для реального Zero Downtime на голом Compose нужно либо вручную держать 2 реплики за nginx upstream, либо переходить на Docker Swarm (см. [Containerization & Orchestration](../Containerization-and-Orchestration/README.md#docker)), который уже даёт `update_config`/`rollback_config` из коробки.
 
 <a id="gitops-argo"></a>
 
