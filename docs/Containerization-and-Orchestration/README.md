@@ -2,7 +2,7 @@
 
 # Containerization & Orchestration
 
-> 🔗 Практическая лаборатория: [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci) (Docker, self-hosted Registry, multi-stage builds) и корень этого репозитория — [`Vagrantfile`](../../Vagrantfile) + [`ansible/site.yml`](../../ansible/site.yml) + [`apps/applications`](../../apps/applications) (kubeadm HA, ArgoCD, Ingress, Storage)
+> 🔗 Практическая лаборатория: [`poly-ci`](https://gitlab.com/Tsuyakashi/poly-ci) (Docker, self-hosted Registry, multi-stage builds) и [`k8s-lab`](https://github.com/Tsuyakashi/k8s-lab) — [`Vagrantfile`](https://github.com/Tsuyakashi/k8s-lab/blob/main/Vagrantfile) + [`ansible/site.yml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/ansible/site.yml) + [`apps/applications`](https://github.com/Tsuyakashi/k8s-lab/tree/main/apps/applications) (kubeadm HA, ArgoCD, Ingress, Storage)
 
 ### Contents
 
@@ -205,7 +205,7 @@ Kubernetes раскладывается на две принципиально �
 * **Container Runtime:** Собственно containerd (или CRI-O), который по команде kubelet скачивает образы и запускает контейнеры (см. цепочку `containerd → runc` из [Docker Engine](#docker) выше — на уровне рантайма Kubernetes использует ровно тот же стек).
 * **kube-proxy:** Отвечает за сетевые правила на ноде, чтобы трафик к абстракции `Service` (стабильный виртуальный IP) корректно распределялся между реальными Pod'ами — реализуется через правила `iptables`/`ipvs` на каждой ноде.
 
-> **Собес-кейс:** Почему в кластере обычно **нечётное** число master-нод (1, 3, 5)? etcd использует Raft-консенсус, которому для принятия решения нужно **большинство (quorum)**. При 3 нодах кластер переживает потерю 1 ноды (2 из 3 — большинство). При 4 нодах ты платишь за лишнюю ноду, но переживаешь всё ту же потерю только 1 узла (нужно 3 из 4) — чётное число не даёт прироста отказоустойчивости, только лишний расход ресурсов. Именно так устроена HA-топология в [`Vagrantfile`](../../Vagrantfile) этого репозитория — 3 master-ноды с keepalived VIP.
+> **Собес-кейс:** Почему в кластере обычно **нечётное** число master-нод (1, 3, 5)? etcd использует Raft-консенсус, которому для принятия решения нужно **большинство (quorum)**. При 3 нодах кластер переживает потерю 1 ноды (2 из 3 — большинство). При 4 нодах ты платишь за лишнюю ноду, но переживаешь всё ту же потерю только 1 узла (нужно 3 из 4) — чётное число не даёт прироста отказоустойчивости, только лишний расход ресурсов. Именно так устроена HA-топология в [`Vagrantfile`](https://github.com/Tsuyakashi/k8s-lab/blob/main/Vagrantfile) этого репозитория — 3 master-ноды с keepalived VIP.
 
 ---
 
@@ -231,7 +231,7 @@ my-chart/
 
 #### Практический пример: переопределение values в ArgoCD Application
 
-Именно этот механизм используется в [`apps/applications/monitoring.yaml`](../../apps/applications/monitoring.yaml) этого репозитория — ArgoCD дёргает Helm под капотом, передавая инлайновые `values` вместо дефолтных значений чарта `kube-prometheus-stack`:
+Именно этот механизм используется в [`apps/applications/monitoring.yaml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/apps/applications/monitoring.yaml) этого репозитория — ArgoCD дёргает Helm под капотом, передавая инлайновые `values` вместо дефолтных значений чарта `kube-prometheus-stack`:
 
 ```yaml
 spec:
@@ -386,7 +386,7 @@ spec:
               key: password
 ```
 
-> **Антипаттерн из практики:** В [`apps/applications/monitoring.yaml`](../../apps/applications/monitoring.yaml) этого репозитория пароль Grafana (`adminPassword: "admin"`) прописан прямо в values чарта открытым текстом — рабочий вариант для локальной Vagrant-лабы, но прямой антипаттерн для прода. Правильный путь — генерировать `Secret` заранее (например, через `kubernetes.core.k8s` в Ansible, как GitHub-токен для ArgoCD в [`ansible/site.yml`](../../ansible/site.yml)) и ссылаться на него через `existingSecret` в values чарта, а не хардкодить значение.
+> **Антипаттерн из практики:** В [`apps/applications/monitoring.yaml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/apps/applications/monitoring.yaml) этого репозитория пароль Grafana (`adminPassword: "admin"`) прописан прямо в values чарта открытым текстом — рабочий вариант для локальной Vagrant-лабы, но прямой антипаттерн для прода. Правильный путь — генерировать `Secret` заранее (например, через `kubernetes.core.k8s` в Ansible, как GitHub-токен для ArgoCD в [`ansible/site.yml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/ansible/site.yml)) и ссылаться на него через `existingSecret` в values чарта, а не хардкодить значение.
 
 ---
 
@@ -409,7 +409,7 @@ spec:
 * **Ingress-ресурс** — это просто YAML-объект с **правилами маршрутизации** (декларация "что куда вести"). Сам по себе он ничего не делает.
 * **Ingress Controller** — это реальный работающий Pod (обычно с Nginx, Traefik или HAProxy внутри), который **читает** Ingress-ресурсы через Kubernetes API и на их основе генерирует реальный конфиг маршрутизации. Без установленного контроллера Ingress-ресурсы просто лежат в etcd мёртвым грузом.
 
-**Nginx Ingress Controller** (используемый в связке ArgoCD + retro-games этого репозитория, см. [`ansible/site.yml`](../../ansible/site.yml), шаг 8) — самая распространённая реализация: под капотом это обычный Nginx, конфиг которого автоматически перегенерируется и перезагружается контроллером при любом изменении Ingress-объектов в кластере.
+**Nginx Ingress Controller** (используемый в связке ArgoCD + retro-games этого репозитория, см. [`ansible/site.yml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/ansible/site.yml), шаг 8) — самая распространённая реализация: под капотом это обычный Nginx, конфиг которого автоматически перегенерируется и перезагружается контроллером при любом изменении Ingress-объектов в кластере.
 
 ### 3. Правила маршрутизации
 
@@ -442,7 +442,7 @@ spec:
                   number: 8004
 ```
 
-Именно эта схема применена в [`apps/retro-games/ingress.yaml`](../../apps/retro-games/ingress.yaml) — один `Host: app.local`, три разных пути (`/pacman`, `/doom`, `/bomberman`), каждый ведёт на свой `Service`. Аннотация `rewrite-target: /$2` необходима, потому что backend-приложения (например, статика игры) сами не знают, что их поставили за префиксом `/pacman` — Nginx **отрезает** этот префикс перед проксированием, используя захваченную regex-группу `$2`.
+Именно эта схема применена в [`apps/retro-games/ingress.yaml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/apps/retro-games/ingress.yaml) — один `Host: app.local`, три разных пути (`/pacman`, `/doom`, `/bomberman`), каждый ведёт на свой `Service`. Аннотация `rewrite-target: /$2` необходима, потому что backend-приложения (например, статика игры) сами не знают, что их поставили за префиксом `/pacman` — Nginx **отрезает** этот префикс перед проксированием, используя захваченную regex-группу `$2`.
 
 | Тип маршрутизации | Пример | Применение |
 | :--- | :--- | :--- |
@@ -470,7 +470,7 @@ spec:
 
 #### Особый случай: SSL Passthrough
 
-Иногда TLS **не должен** терминироваться на Ingress — например, когда сам backend-сервис (как ArgoCD API Server в [`apps/applications/argocd.yaml`](../../apps/applications/argocd.yaml)) обязан сам управлять своим TLS-сертификатом для gRPC-соединений. Для этого случая существует аннотация:
+Иногда TLS **не должен** терминироваться на Ingress — например, когда сам backend-сервис (как ArgoCD API Server в [`apps/applications/argocd.yaml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/apps/applications/argocd.yaml)) обязан сам управлять своим TLS-сертификатом для gRPC-соединений. Для этого случая существует аннотация:
 
 ```yaml
 annotations:
@@ -565,7 +565,7 @@ volumeBindingMode: WaitForFirstConsumer   # диск создаётся ТОЛЬ
 
 #### local-path-provisioner: практический пример из этого репозитория
 
-В однонодовых/лабораторных кластерах (как в [`ansible/site.yml`](../../ansible/site.yml), шаг 7 этого репозитория) облачных CSI-драйверов нет — вместо этого используется **local-path-provisioner**, который просто создаёт директорию на локальном диске конкретной ноды и презентует её как PV.
+В однонодовых/лабораторных кластерах (как в [`ansible/site.yml`](https://github.com/Tsuyakashi/k8s-lab/blob/main/ansible/site.yml), шаг 7 этого репозитория) облачных CSI-драйверов нет — вместо этого используется **local-path-provisioner**, который просто создаёт директорию на локальном диске конкретной ноды и презентует её как PV.
 
 ```bash
 kubectl patch storageclass local-path \
