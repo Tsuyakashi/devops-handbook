@@ -252,12 +252,19 @@ move), `apply`, затем `moved` можно убрать.
 ```bash
 terraform() {
     if [ -z "${TF_VAR_proxmox_api_token:-}" ]; then
-        TF_VAR_proxmox_api_token="$(vault kv get -field=api_token secret/terraform-provider)"
+        TF_VAR_proxmox_api_token="$(vault kv get -field=api_token proxmox/terraform-provider)"
         export TF_VAR_proxmox_api_token
     fi
     command terraform "$@"
 }
 ```
+
+Секреты в Vault раскладываются по сервису/категории, а не плоско: базовая
+установка владеет общими путями (`proxmox/terraform-provider`,
+`proxmox/ssh-keys`, `minio/credentials`), а каждый доп. сервис получает
+свой KV-mount `<repo>/` со своим init-скриптом и переиспользует общие
+пути. Живой пример — [`iac-proxmox-lab`](https://github.com/Tsuyakashi/iac-proxmox-lab)
+(база) + `oci/`, `k8s-lab/`, `relief-landing/` в соответствующих репозиториях.
 
 Ловушка: если добавляешь новый секрет в фетч-функцию, а gate-проверка
 по-прежнему смотрит только на один старый `TF_VAR_*` — шелл с уже
